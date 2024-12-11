@@ -1,3 +1,5 @@
+# services/calculation_service.py
+
 import subprocess
 import os
 import re
@@ -20,7 +22,7 @@ class CalculationService:
 
     def run_crest(self, molecule: Molecule):
         """
-        Executa o CREST para busca conformacional.
+        Executa o CREST para busca conformacional usando WSL.
         """
         
         xyz_path = molecule.xyz_path
@@ -34,11 +36,11 @@ class CalculationService:
         # Define o caminho do arquivo de log do CREST
         crest_log_file = output_dir / "crest.log"
 
-        # Monta o comando do CREST
-        command = self.settings.calculation_params.crest_command(xyz_path)
-        command.insert(0, self.settings.crest_path)  # Adiciona o caminho do executável do CREST
+        # Monta o comando do CREST para execução via WSL
+        crest_path = self.settings.crest_path
+        command = ["wsl", crest_path] + self.settings.calculation_params.crest_command(xyz_path)
 
-        # Executa o CREST e captura a saída e erros
+        # Executa o CREST via WSL e captura a saída e erros
         try:
             with open(crest_log_file, "w") as log_file:
                 process = subprocess.Popen(command, cwd=output_dir, stdout=log_file, stderr=subprocess.PIPE, text=True)
@@ -170,11 +172,13 @@ class CalculationService:
         Extrai a entalpia de formação do arquivo de saída do xTB (xtbhess.log ou thermochemistry).
         """
         if not molecule.thermochemistry_path:
-            raise ValueError("Caminho do arquivo xtbhess.log não definido.")
-
+            logging.warning(f"O caminho do arquivo de termoquímica não está definido para a molécula {molecule.name}. Não foi possível extrair a entalpia de formação.")
+            return
+        
         thermochemistry_path = Path(molecule.thermochemistry_path)
         if not thermochemistry_path.exists():
-            raise FileNotFoundError(f"Arquivo de termoquímica do xTB não encontrado: {molecule.thermochemistry_path}")
+            logging.warning(f"Arquivo de termoquímica do xTB não encontrado: {molecule.thermochemistry_path}. Não foi possível extrair a entalpia de formação.")
+            return
 
         try:
             with open(thermochemistry_path, "r") as f:

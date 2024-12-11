@@ -1,3 +1,4 @@
+# services/conversion_service.py
 import subprocess
 from config.settings import Settings
 from core.molecule import Molecule
@@ -26,11 +27,11 @@ class ConversionService:
         molecule.xyz_path = xyz_path
 
         command = [
-            self.settings.openbabel_path, # Usando o caminho do OpenBabel definido nas configurações
+            self.settings.openbabel_path,  # Caminho do OpenBabel
             "-isdf", sdf_path,
-            "-oxyz", xyz_path,
-            "-h",  # Adiciona hidrogênios
-            "--gen3d"  # Gera coordenadas 3D
+            "-oxyz",
+            "-O" + xyz_path,  # Usar -O para especificar o arquivo de saída
+            "-h"  # Adicionar hidrogênios
         ]
 
         try:

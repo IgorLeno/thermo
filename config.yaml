@@ -3,6 +3,6 @@ calculation_parameters:
   crest_method: gfn2
   electronic_temperature: 300.0
   solvent:
-openbabel_path: C:\Program Files\OpenBabel-3.1.1
-crest_path: C:\thermo_grimme\programs\crest
-xtb_path: C:\thermo_grimme\programs\xtb
+openbabel_path: C:\Program Files\OpenBabel-3.1.1\obabel.exe
+crest_path: \\wsl.localhost\Ubuntu\home\igor_fern\miniconda3\envs\crest_env\bin\crest
+xtb_path: C:\Users\ildsf\Downloads\TCC\grimme_thermo\programs\xtb\xtb-6.7.1\bin\xtb.exe

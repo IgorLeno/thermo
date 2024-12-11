@@ -1,11 +1,10 @@
-from core.molecule import Molecule
-from services.calculation_service import CalculationService
-from services.pubchem_service import PubChemService
-from services.file_service import FileService
-from services.conversion_service import ConversionService
-from config.settings import Settings
-from interfaces.menu import Menu
+# main.py
 from interfaces.cli import CommandLineInterface
+from config.settings import Settings
+from services.file_service import FileService
+from services.pubchem_service import PubChemService
+from services.conversion_service import ConversionService
+from services.calculation_service import CalculationService
 import logging
 
 def main():
@@ -32,13 +31,11 @@ def main():
     conversion_service = ConversionService(settings)
     calculation_service = CalculationService(settings, file_service, conversion_service)
     
-    # Inicializa a interface
-    # menu = Menu(settings, file_service, pubchem_service, conversion_service, calculation_service)
+    # Inicializa a interface de linha de comando
     cli = CommandLineInterface(settings, file_service, pubchem_service, conversion_service, calculation_service)
 
-    # Inicia o menu
+    # Inicia a interface de linha de comando
     try:
-        # menu.run()
         cli.run()
         logging.info("Programa finalizado com sucesso.")
     except Exception as e:
