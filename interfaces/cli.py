@@ -12,8 +12,8 @@ class CommandLineInterface:
     """
     Classe que implementa a interface de linha de comando do programa.
     """
-    def __init__(self, settings: Settings = None, file_service: FileService = None, 
-                 pubchem_service: PubChemService = None, conversion_service: ConversionService = None, 
+    def __init__(self, settings: Settings = None, file_service: FileService = None,
+                 pubchem_service: PubChemService = None, conversion_service: ConversionService = None,
                  calculation_service: CalculationService = None):
         self.settings = settings or Settings()
         self.file_service = file_service or FileService()
@@ -29,16 +29,16 @@ class CommandLineInterface:
         subparsers = parser.add_subparsers(dest="command", help="Comandos disponíveis")
 
         # Comando para calcular a entalpia de uma única molécula
-        single_parser = subparsers.add_parser("single", help="Calcula a entalpia de uma molécula")
+        single_parser = subparsers.add_parser("1", help="Calcula a entalpia de uma molécula")
         single_parser.add_argument("molecule_name", type=str, help="Nome da molécula")
 
         # Comando para calcular a entalpia de várias moléculas
-        multiple_parser = subparsers.add_parser("multiple", help="Calcula a entalpia de várias moléculas")
+        multiple_parser = subparsers.add_parser("2", help="Calcula a entalpia de várias moléculas")
         multiple_parser.add_argument("molecule_names", type=str, nargs="*", help="Nomes das moléculas")
         multiple_parser.add_argument("-f", "--file", type=str, help="Arquivo com a lista de moléculas")
 
         # Comando para editar configurações
-        config_parser = subparsers.add_parser("config", help="Editar configurações")
+        config_parser = subparsers.add_parser("3", help="Editar configurações")
         config_parser.add_argument("-t", "--threads", type=int, help="Número de threads")
         config_parser.add_argument("-m", "--method", type=str, help="Método do CREST (gfn1, gfn2, gfnff)")
         config_parser.add_argument("-ob", "--openbabel", type=str, help="Caminho do OpenBabel")
@@ -47,27 +47,70 @@ class CommandLineInterface:
         config_parser.add_argument("-et", "--etemp", type=float, help="Temperatura eletrônica (em Kelvin)")
         config_parser.add_argument("-s", "--solvent", type=str, help="Solvente")
         config_parser.add_argument("--save", type=str, help="Salvar configurações em um arquivo")
-        
+
         # Comando para exibir resultados
-        result_parser = subparsers.add_parser("results", help="Exibe os resultados dos cálculos realizados.")
+        result_parser = subparsers.add_parser("4", help="Exibe os resultados dos cálculos realizados.")
         result_parser.add_argument("-g", "--generate_summary", type=str, help="Gera um arquivo de resumo.")
 
         return parser
 
     def run(self):
         """Analisa os argumentos de linha de comando e executa a ação apropriada."""
-        args = self.parser.parse_args()
+        print("\nMenu Principal:")
+        print("1. Calcular a entalpia de uma molécula")
+        print("2. Calcular a entalpia para várias moléculas")
+        print("3. Editar configurações")
+        print("4. Exibir resultados")
+        print("5. Sair")
 
-        if args.command == "single":
-            self.calculate_single_molecule(args.molecule_name)
-        elif args.command == "multiple":
-            self.calculate_multiple_molecules(args.molecule_names, args.file)
-        elif args.command == "config":
-            self.edit_settings(args)
-        elif args.command == "results":
-            self.show_results(args.generate_summary)
+        choice = input("Escolha uma opção: ")
+
+        # Mapeia a escolha do usuário para o nome do comando correspondente
+        command_map = {
+            "1": "single",
+            "2": "multiple",
+            "3": "config",
+            "4": "results",
+            "5": "exit"
+        }
+
+        command = command_map.get(choice)
+
+        if command == "exit":
+            print("Saindo do programa...")
+            return
+
+        if command:
+            # Passa argumentos fictícios para simular a estrutura original
+            args = self.parser.parse_args([command, "dummy"] if command in ["single", "multiple", "config", "results"] else [command])
+            
+            if command == "single":
+                molecule_name = input("Digite o nome da molécula: ")
+                self.calculate_single_molecule(molecule_name)
+            elif command == "multiple":
+                input_method = input("Deseja digitar os nomes das moléculas (1) ou fornecer um arquivo com a lista (2)? ")
+                if input_method == "1":
+                    molecule_names = input("Digite os nomes das moléculas separados por vírgula: ").split(",")
+                    molecule_names = [name.strip() for name in molecule_names]
+                elif input_method == "2":
+                    filepath = input("Digite o caminho do arquivo (cada linha deve conter um nome de molécula): ")
+                    try:
+                        with open(filepath, "r") as f:
+                            molecule_names = [line.strip() for line in f]
+                    except FileNotFoundError:
+                        print(f"Arquivo não encontrado: {filepath}")
+                        return
+                else:
+                    print("Opção inválida.")
+                    return
+                self.calculate_multiple_molecules(molecule_names)
+
+            elif command == "config":
+                self.edit_settings(args)
+            elif command == "results":
+                self.show_results(args.generate_summary if hasattr(args, 'generate_summary') else None)
         else:
-            self.parser.print_help()
+            print("Opção inválida.")
 
     def calculate_single_molecule(self, molecule_name: str):
         """
@@ -124,33 +167,42 @@ class CommandLineInterface:
         """
         Edita as configurações com base nos argumentos fornecidos.
         """
-        if args.threads is not None:
-            self.settings.calculation_params.n_threads = args.threads
-        if args.method:
-            self.settings.calculation_params.crest_method = args.method
-        if args.openbabel:
-            self.settings.openbabel_path = args.openbabel
-        if args.crest:
-            self.settings.crest_path = args.crest
-        if args.xtb:
-            self.settings.xtb_path = args.xtb
-        if args.etemp is not None:
-            self.settings.calculation_params.electronic_temperature = args.etemp
-        if args.solvent:
-            self.settings.calculation_params.solvent = args.solvent
-
-        if args.save:
-            self.settings.save_settings(args.save)
-            print("Configurações salvas com sucesso.")
-        else:
+        while True:
             print("\nConfigurações Atuais:")
-            print(f"  Número de threads: {self.settings.calculation_params.n_threads}")
-            print(f"  Método do CREST: {self.settings.calculation_params.crest_method}")
-            print(f"  Caminho do OpenBabel: {self.settings.openbabel_path}")
-            print(f"  Caminho do CREST: {self.settings.crest_path}")
-            print(f"  Caminho do xTB: {self.settings.xtb_path}")
-            print(f"  Temperatura eletrônica (Kelvin): {self.settings.calculation_params.electronic_temperature}")
-            print(f"  Solvente: {self.settings.calculation_params.solvent}")
+            print(f"1. Número de threads: {self.settings.calculation_params.n_threads}")
+            print(f"2. Método do CREST: {self.settings.calculation_params.crest_method}")
+            print(f"3. Caminho do OpenBabel: {self.settings.openbabel_path}")
+            print(f"4. Caminho do CREST: {self.settings.crest_path}")
+            print(f"5. Caminho do xTB: {self.settings.xtb_path}")
+            print(f"6. Temperatura eletrônica (Kelvin): {self.settings.calculation_params.electronic_temperature}")
+            print(f"7. Solvente: {self.settings.calculation_params.solvent}")
+            print("8. Salvar configurações")
+            print("9. Voltar ao menu principal")
+
+            choice = input("Escolha uma opção para editar: ")
+
+            if choice == "1":
+                self.settings.calculation_params.n_threads = int(input("Digite o novo número de threads: "))
+            elif choice == "2":
+                self.settings.calculation_params.crest_method = input("Digite o novo método do CREST (gfn1, gfn2, gfnff): ")
+            elif choice == "3":
+                self.settings.openbabel_path = input("Digite o novo caminho do OpenBabel: ")
+            elif choice == "4":
+                self.settings.crest_path = input("Digite o novo caminho do CREST: ")
+            elif choice == "5":
+                self.settings.xtb_path = input("Digite o novo caminho do xTB: ")
+            elif choice == "6":
+                self.settings.calculation_params.electronic_temperature = float(input("Digite a nova temperatura eletrônica (em Kelvin): "))
+            elif choice == "7":
+                self.settings.calculation_params.solvent = input("Digite o nome do solvente (ou deixe em branco para nenhum): ")
+            elif choice == "8":
+                filepath = input("Digite o caminho para salvar o arquivo de configuração: ")
+                self.settings.save_settings(filepath)
+                print("Configurações salvas com sucesso.")
+            elif choice == "9":
+                break
+            else:
+                print("Opção inválida.")
 
     def show_results(self, generate_summary:str = None):
         """Exibe os resultados dos cálculos realizados."""

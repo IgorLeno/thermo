@@ -26,7 +26,7 @@ class ConversionService:
         molecule.xyz_path = xyz_path
 
         command = [
-            self.settings.openbabel_path,
+            self.settings.openbabel_path, # Usando o caminho do OpenBabel definido nas configurações
             "-isdf", sdf_path,
             "-oxyz", xyz_path,
             "-h",  # Adiciona hidrogênios

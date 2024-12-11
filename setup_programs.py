@@ -7,11 +7,10 @@ from pathlib import Path
 # --- Constantes para download e instalação ---
 CREST_URL = "https://github.com/grimme-lab/crest/archive/refs/heads/master.zip"
 XTB_URL = "https://github.com/grimme-lab/xtb/releases/download/v6.6.1/xtb-6.6.1-windows-x86_64.zip"
-OPENBABEL_URL = "https://github.com/openbabel/openbabel/releases/download/openbabel-3-1-1/OpenBabel-3.1.1-Windows-x86_64.exe"
 PROGRAM_PATHS = {
     "crest": Path("./programs/crest"),
     "xtb": Path("./programs/xtb"),
-    "openbabel": Path("./programs/OpenBabel"),
+    # "openbabel": Path("./programs/OpenBabel"), # Removido
 }
 
 def download_file(url, destination):
@@ -44,17 +43,6 @@ def install_xtb():
         zip_ref.extractall(PROGRAM_PATHS["xtb"])
     print("xTB instalado com sucesso.")
 
-def install_openbabel():
-    """Faz o download e instala o OpenBabel."""
-    openbabel_exe_path = PROGRAM_PATHS["openbabel"] / "OpenBabel-3.1.1-Windows-x86_64.exe"
-    download_file(OPENBABEL_URL, openbabel_exe_path)
-
-    try:
-        subprocess.run([openbabel_exe_path, "/silent"], check=True)
-        print("OpenBabel instalado com sucesso.")
-    except subprocess.CalledProcessError as e:
-        print(f"Erro ao instalar o OpenBabel: {e}")
-
 def verify_installations():
     """Verifica se os programas foram instalados corretamente."""
     for program, path in PROGRAM_PATHS.items():
@@ -70,14 +58,14 @@ def set_environment_variables():
     # Adicionar os diretórios dos programas ao PATH
     os.environ["PATH"] += os.pathsep + str(PROGRAM_PATHS["crest"])
     os.environ["PATH"] += os.pathsep + str(PROGRAM_PATHS["xtb"])
-    os.environ["PATH"] += os.pathsep + str(PROGRAM_PATHS["openbabel"])
+    # os.environ["PATH"] += os.pathsep + str(PROGRAM_PATHS["openbabel"]) # Removido
 
     print("Variáveis de ambiente configuradas.")
 
 if __name__ == "__main__":
     install_crest()
     install_xtb()
-    install_openbabel()
+    # install_openbabel() # Removido
     if verify_installations():
         set_environment_variables()
     print("Configuração dos programas concluída.")

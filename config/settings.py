@@ -19,7 +19,7 @@ class Settings:
                 config = yaml.safe_load(f)
 
             self.calculation_params = CalculationParameters(**config.get("calculation_parameters", {}))
-            self.openbabel_path = config.get("openbabel_path", "obabel")
+            self.openbabel_path = config.get("openbabel_path", "obabel") # Carrega o caminho do OpenBabel do config.yaml
             self.crest_path = config.get("crest_path", "crest")
             self.xtb_path = config.get("xtb_path", "xtb")
         except FileNotFoundError:
