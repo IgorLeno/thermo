@@ -1,0 +1,14 @@
+Thermochemical Properties Calculator
+
+Molecule Name: butanoic acid
+Molecular Formula: C4H8O2
+
+Heat of Formation values (kJ/mol):
+-485,54653
+-467,96098
+-468,50624
+-466,92526
+
+Entropy values (kJ/mol):
+0,36029177120000005
+0,3469063184

@@ -1,0 +1,14 @@
+Thermochemical Properties Calculator
+
+Molecule Name: methyl acetate
+Molecular Formula: C3H6O2
+
+Best Conformer Potential Energy: 3.755423
+Number of the Best Conformation: 9997
+
+Heat of Formation values (kJ/mol):
+-403,829
+-394,69532
+
+Entropy values (kJ/mol):
+0,3277130552

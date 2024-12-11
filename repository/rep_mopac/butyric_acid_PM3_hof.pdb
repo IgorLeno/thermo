@@ -1,0 +1,21 @@
+HEADER  data-set: C:/Users/ildsf/Downloads/TCC/thermo/programs/mopac/butyric_aci
+REMARK  MOPAC 2016, Version: 22.097  Date: Dec 10 2024 12:19
+REMARK   4
+REMARK   4 File created by VEGA 3.2.2
+REMARK   4
+ATOM      1  O   UNK A   1      14.869   1.876 -40.209  1.0  -3.07      PROT O 
+ATOM      2  O   UNK A   1      14.269   3.750 -39.276  1.0  -3.96      PROT O 
+ATOM      3  C   UNK A   1      16.081   2.201 -37.126  1.0  -0.91      PROT C 
+ATOM      4  C   UNK A   1      16.380   2.730 -38.522  1.0  -0.96      PROT C 
+ATOM      5  C   UNK A   1      17.348   2.084 -36.310  1.0  -1.11      PROT C 
+ATOM      6  C   UNK A   1      15.108   2.869 -39.319  1.0   3.78      PROT C 
+TER       7      UNK A   1
+ATOM      8  H   UNK A   1      15.581   1.215 -37.195  1.0   0.56      PROT H 
+ATOM      9  H   UNK A   1      15.360   2.869 -36.614  1.0   0.62      PROT H 
+ATOM     10  H   UNK A   1      16.874   3.720 -38.462  1.0   0.77      PROT H 
+ATOM     11  H   UNK A   1      17.096   2.061 -39.041  1.0   0.77      PROT H 
+ATOM     12  H   UNK A   1      17.848   3.055 -36.194  1.0   0.41      PROT H 
+ATOM     13  H   UNK A   1      18.069   1.398 -36.775  1.0   0.40      PROT H 
+ATOM     14  H   UNK A   1      17.135   1.702 -35.303  1.0   0.43      PROT H 
+ATOM     15  H   UNK A   1      14.049   2.037 -40.664  1.0   2.25      PROT H 
+END

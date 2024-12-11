@@ -1,0 +1,6 @@
+requests
+pathlib
+logging
+dataclasses
+enum
+re

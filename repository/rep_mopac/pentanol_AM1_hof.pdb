@@ -1,0 +1,25 @@
+HEADER  data-set: C:/Users/ildsf/Downloads/TCC/thermo/programs/mopac/pentanol_AM
+REMARK  MOPAC 2016, Version: 22.097  Date: Dec 10 2024 12:19
+REMARK   4
+REMARK   4 File created by VEGA 3.2.2
+REMARK   4
+ATOM      1  O   UNK A   1      16.233 -59.225  56.519  1.0  -3.26      PROT O 
+ATOM      2  C   UNK A   1      18.436 -56.400  55.390  1.0  -1.55      PROT C 
+ATOM      3  C   UNK A   1      17.167 -57.207  55.534  1.0  -1.99      PROT C 
+ATOM      4  C   UNK A   1      18.189 -55.117  54.624  1.0  -1.58      PROT C 
+ATOM      5  C   UNK A   1      17.425 -58.495  56.297  1.0  -0.23      PROT C 
+ATOM      6  C   UNK A   1      19.452 -54.308  54.481  1.0  -2.11      PROT C 
+TER       7      UNK A   1
+ATOM      8  H   UNK A   1      19.214 -57.010  54.859  1.0   0.79      PROT H 
+ATOM      9  H   UNK A   1      18.844 -56.156  56.407  1.0   0.82      PROT H 
+ATOM     10  H   UNK A   1      16.752 -57.450  54.521  1.0   0.78      PROT H 
+ATOM     11  H   UNK A   1      16.388 -56.608  56.075  1.0   0.94      PROT H 
+ATOM     12  H   UNK A   1      17.780 -55.362  53.608  1.0   0.78      PROT H 
+ATOM     13  H   UNK A   1      17.410 -54.510  55.156  1.0   0.80      PROT H 
+ATOM     14  H   UNK A   1      17.817 -58.280  57.328  1.0   1.05      PROT H 
+ATOM     15  H   UNK A   1      18.168 -59.133  55.747  1.0   0.62      PROT H 
+ATOM     16  H   UNK A   1      19.861 -54.034  55.483  1.0   0.73      PROT H 
+ATOM     17  H   UNK A   1      20.232 -54.888  53.931  1.0   0.72      PROT H 
+ATOM     18  H   UNK A   1      19.247 -53.367  53.914  1.0   0.73      PROT H 
+ATOM     19  H   UNK A   1      15.834 -59.389  55.657  1.0   1.95      PROT H 
+END
