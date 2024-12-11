@@ -4,3 +4,6 @@ logging
 dataclasses
 enum
 re
+pyyaml
+pytest
+requests

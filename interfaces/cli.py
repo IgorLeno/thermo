@@ -81,9 +81,14 @@ class CommandLineInterface:
             return
 
         if command:
-            # Passa argumentos fictícios para simular a estrutura original
-            args = self.parser.parse_args([command, "dummy"] if command in ["single", "multiple", "config", "results"] else [command])
-            
+            # Modificação para lidar com a estrutura esperada pelo argparse
+            if command in ["single", "multiple", "config", "results"]:
+                # Para esses comandos, passamos um argumento fictício para manter a estrutura original
+                args = self.parser.parse_args([command_map[choice], "dummy"])
+            else:
+                # Para comandos que não precisam de argumentos adicionais
+                args = self.parser.parse_args([command_map[choice]])
+
             if command == "single":
                 molecule_name = input("Digite o nome da molécula: ")
                 self.calculate_single_molecule(molecule_name)
