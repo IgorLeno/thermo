@@ -1,20 +1,16 @@
-# services/calculation_service.py
-
+import re
+import shlex
 import subprocess
 import os
-import re
+from pathlib import Path
+import logging
 from core.molecule import Molecule
-from core.calculation import CalculationParameters
 from config.settings import Settings
 from services.file_service import FileService
 from services.conversion_service import ConversionService
 from config.constants import *
-import logging
 
 class CalculationService:
-    """
-    Classe que gerencia a execução dos cálculos com CREST e xTB.
-    """
     def __init__(self, settings: Settings, file_service: FileService, conversion_service: ConversionService):
         self.settings = settings
         self.file_service = file_service
@@ -22,60 +18,123 @@ class CalculationService:
 
     def run_crest(self, molecule: Molecule):
         """
-        Executa o CREST para busca conformacional usando WSL.
+        Executa o CREST para busca conformacional diretamente no ambiente conda no WSL.
+        O arquivo XYZ é copiado para o diretório do CREST no ambiente conda, o cálculo é executado lá,
+        e depois todos os arquivos são movidos para o diretório de saída.
         """
-        
-        xyz_path = molecule.xyz_path
-        if not os.path.exists(xyz_path):
-            raise FileNotFoundError(f"Arquivo XYZ não encontrado: {xyz_path}")
-
-        # Cria o diretório de saída do CREST
-        output_dir = CREST_DIR / molecule.name
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Define o caminho do arquivo de log do CREST
-        crest_log_file = output_dir / "crest.log"
-
-        # Monta o comando do CREST para execução via WSL
-        crest_path = self.settings.crest_path
-        command = ["wsl", crest_path] + self.settings.calculation_params.crest_command(xyz_path)
-
-        # Executa o CREST via WSL e captura a saída e erros
+        logging.info(f"Iniciando a execução do CREST para a molécula: {molecule.name}")
         try:
+            # Verifica se o arquivo XYZ existe após a conversão
+            xyz_path = molecule.xyz_path
+            if not os.path.exists(xyz_path):
+                raise FileNotFoundError(f"Arquivo XYZ não encontrado após conversão: {xyz_path}")
+            logging.info(f"Arquivo XYZ encontrado após conversão: {xyz_path}")
+
+            # Cria o diretório de saída do CREST
+            output_dir = CREST_DIR / molecule.name
+            os.makedirs(output_dir, exist_ok=True)
+            logging.info(f"Diretório de saída do CREST criado: {output_dir}")
+
+            # Define o diretório do CREST no WSL e caminhos do conda
+            crest_wsl_dir = "/home/igor_fern/miniconda3/envs/crest_env/bin"
+            xyz_filename = os.path.basename(xyz_path)
+
+            # Converte o caminho Windows para o formato WSL
+            xyz_path_abs = os.path.abspath(xyz_path)
+            drive_letter = xyz_path_abs[0].lower()
+            wsl_xyz_path = f"/mnt/{drive_letter}/{xyz_path_abs[3:].replace('\\', '/')}"
+            
+            # Copia o arquivo XYZ para o diretório WSL
+            copy_command = f"cp '{wsl_xyz_path}' '{crest_wsl_dir}/{xyz_filename}'"
+            subprocess.run(
+                ["wsl", "bash", "-c", copy_command],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            # Cria um script shell temporário no WSL
+            script_content = f'''#!/bin/bash
+    cd {crest_wsl_dir}
+    source /home/igor_fern/miniconda3/etc/profile.d/conda.sh
+    conda activate crest_env
+    ./crest ./{xyz_filename} --gfn2 -T {self.settings.calculation_params.n_threads} {'--solv ' + self.settings.calculation_params.solvent if self.settings.calculation_params.solvent else ''}
+    '''
+            
+            # Salva o script no WSL
+            script_path = f"{crest_wsl_dir}/run_crest.sh"
+            subprocess.run(
+                ["wsl", "bash", "-c", f"echo '{script_content}' > {script_path}"],
+                check=True
+            )
+
+            # Torna o script executável
+            subprocess.run(
+                ["wsl", "chmod", "+x", script_path],
+                check=True
+            )
+
+            # Executa o script
+            crest_log_file = output_dir / "crest.log"
+            logging.info("Executando CREST via script...")
+            
             with open(crest_log_file, "w") as log_file:
-                process = subprocess.Popen(command, cwd=output_dir, stdout=log_file, stderr=subprocess.PIPE, text=True)
-                _, stderr = process.communicate()
+                process = subprocess.run(
+                    ["wsl", script_path],
+                    stdout=log_file,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True
+                )
 
-            # Verifica se houve erros na execução do CREST
-            if process.returncode != 0:
-                logging.error(f"Erro ao executar o CREST para a molécula {molecule.name}.")
-                if stderr:
-                    logging.error(stderr)
-                raise RuntimeError(f"Erro ao executar o CREST para a molécula {molecule.name}. Veja o log para mais detalhes: {crest_log_file}")
+            # Remove o script temporário
+            subprocess.run(
+                ["wsl", "rm", "-f", script_path],
+                check=True
+            )
 
-            # Define os caminhos dos arquivos de saída do CREST
+            # Converte o caminho do diretório de saída para formato WSL
+            output_dir_wsl = f"/mnt/{str(output_dir)[0].lower()}/{str(output_dir)[3:].replace('\\', '/')}"
+            
+            # Move os arquivos gerados para o diretório de saída
+            move_command = f'''
+            for file in {crest_wsl_dir}/crest* {crest_wsl_dir}/TMPCONF*; do
+                if [ -f "$file" ]; then
+                    mv "$file" '{output_dir_wsl}/'
+                fi
+            done
+            '''
+            
+            subprocess.run(
+                ["wsl", "bash", "-c", move_command],
+                check=True
+            )
+
+            # Remove o arquivo XYZ de entrada
+            subprocess.run(
+                ["wsl", "rm", "-f", f"{crest_wsl_dir}/{xyz_filename}"],
+                check=True
+            )
+
+            # Define os caminhos dos arquivos de saída importantes
             molecule.crest_conformers_path = str(output_dir / CREST_CONFORMERS_FILE)
             molecule.crest_best_path = str(output_dir / CREST_BEST_FILE)
+            
+            logging.info(f"Busca conformacional com CREST concluída para {molecule.name}")
+            logging.info(f"Arquivos de saída: {molecule.crest_conformers_path}, {molecule.crest_best_path}")
 
-            logging.info(f"Busca conformacional com CREST concluída para {molecule.name}.")
-
-        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Erro ao executar o CREST para a molécula {molecule.name}."
+            if e.stderr:
+                error_msg += f"\nErro: {e.stderr}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg) from e
+        except Exception as e:
             logging.error(f"Erro ao executar o CREST para a molécula {molecule.name}: {e}")
             raise
 
-        # Extrai as energias dos confôrmeros do arquivo crest.energies, se existir
-        crest_energies_file = output_dir / "crest.energies"
-        if os.path.exists(crest_energies_file):
-            try:
-                with open(crest_energies_file, "r") as f:
-                    for line in f:
-                        match = re.search(r"TOTAL ENERGY\s+=\s+(-?\d+\.\d+)", line)
-                        if match:
-                            energy = float(match.group(1))
-                            molecule.conformer_energies.append(energy)
-                logging.info(f"Energias dos confôrmeros extraídas com sucesso para {molecule.name}.")
-            except Exception as e:
-                logging.warning(f"Não foi possível extrair as energias dos confôrmeros para {molecule.name}: {e}")
+
+
 
     def run_xtb_opt(self, molecule: Molecule):
         """
@@ -99,25 +158,28 @@ class CalculationService:
         command = self.settings.calculation_params.xtb_command(str(crest_best_path), "opt")
         command.insert(0, self.settings.xtb_path)
 
-        # Executa o xTB e captura a saída e erros
         try:
             with open(xtb_log_file, "w") as log_file:
-                process = subprocess.Popen(command, cwd=output_dir, stdout=log_file, stderr=subprocess.PIPE, text=True)
-                _, stderr = process.communicate()
-
-            # Verifica se houve erros na execução do xTB
-            if process.returncode != 0:
-                logging.error(f"Erro ao executar a otimização com xTB para a molécula {molecule.name}.")
-                if stderr:
-                    logging.error(stderr)
-                raise RuntimeError(f"Erro ao executar a otimização com xTB para a molécula {molecule.name}. Veja o log para mais detalhes: {xtb_log_file}")
+                process = subprocess.run(
+                    command,
+                    cwd=output_dir,
+                    stdout=log_file,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True
+                )
 
             # Define o caminho do arquivo de saída da otimização
             molecule.xtb_opt_path = str(output_dir / XTBOPT_FILE)
-
             logging.info(f"Otimização de geometria com xTB concluída para {molecule.name}.")
 
-        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Erro ao executar a otimização com xTB para a molécula {molecule.name}."
+            if e.stderr:
+                error_msg += f"\nErro: {e.stderr}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg) from e
+        except Exception as e:
             logging.error(f"Erro ao executar a otimização com xTB para a molécula {molecule.name}: {e}")
             raise
 
@@ -143,18 +205,16 @@ class CalculationService:
         command = self.settings.calculation_params.xtb_command(str(xtb_opt_path), "hess")
         command.insert(0, self.settings.xtb_path)
 
-        # Executa o xTB e captura a saída e erros
         try:
             with open(xtb_log_file, "w") as log_file:
-                process = subprocess.Popen(command, cwd=output_dir, stdout=log_file, stderr=subprocess.PIPE, text=True)
-                _, stderr = process.communicate()
-
-            # Verifica se houve erros na execução do xTB
-            if process.returncode != 0:
-                logging.error(f"Erro ao executar o cálculo da Hessiana com xTB para a molécula {molecule.name}.")
-                if stderr:
-                    logging.error(stderr)
-                raise RuntimeError(f"Erro ao executar o cálculo da Hessiana com xTB para a molécula {molecule.name}. Veja o log para mais detalhes: {xtb_log_file}")
+                process = subprocess.run(
+                    command,
+                    cwd=output_dir,
+                    stdout=log_file,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True
+                )
 
             # Define os caminhos dos arquivos de saída do cálculo da Hessiana
             molecule.hessian_path = str(output_dir / HESSIAN_FILE)
@@ -163,7 +223,13 @@ class CalculationService:
 
             logging.info(f"Cálculo da Hessiana e frequências vibracionais com xTB concluído para {molecule.name}.")
 
-        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Erro ao executar o cálculo da Hessiana com xTB para a molécula {molecule.name}."
+            if e.stderr:
+                error_msg += f"\nErro: {e.stderr}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg) from e
+        except Exception as e:
             logging.error(f"Erro ao executar o cálculo da Hessiana com xTB para a molécula {molecule.name}: {e}")
             raise
 
@@ -172,12 +238,12 @@ class CalculationService:
         Extrai a entalpia de formação do arquivo de saída do xTB (xtbhess.log ou thermochemistry).
         """
         if not molecule.thermochemistry_path:
-            logging.warning(f"O caminho do arquivo de termoquímica não está definido para a molécula {molecule.name}. Não foi possível extrair a entalpia de formação.")
+            logging.warning(f"O caminho do arquivo de termoquímica não está definido para a molécula {molecule.name}.")
             return
         
         thermochemistry_path = Path(molecule.thermochemistry_path)
         if not thermochemistry_path.exists():
-            logging.warning(f"Arquivo de termoquímica do xTB não encontrado: {molecule.thermochemistry_path}. Não foi possível extrair a entalpia de formação.")
+            logging.warning(f"Arquivo de termoquímica do xTB não encontrado: {molecule.thermochemistry_path}.")
             return
 
         try:
@@ -188,8 +254,8 @@ class CalculationService:
             match = re.search(r"formation enthalpy\s+([\w-]+[\w]+)\s+([\d.-]+)\s+([\d.-]+)", content)
 
             if match:
-                unit, value, _ = match.groups()  # Captura a unidade, o valor e a linha (não utilizada)
-                formation_enthalpy_au = float(value)  # Converte o valor para float
+                unit, value, _ = match.groups()
+                formation_enthalpy_au = float(value)
                 logging.info(f"Entalpia de formação extraída para {molecule.name}: {formation_enthalpy_au} {unit}")
 
                 # Converte de Hartree para kcal/mol (1 Hartree = 627.509 kcal/mol)
@@ -200,7 +266,7 @@ class CalculationService:
                 molecule.formation_enthalpy = formation_enthalpy_kcal_mol
 
             else:
-                logging.warning(f"Não foi possível encontrar a entalpia de formação no arquivo {thermochemistry_path} para a molécula {molecule.name}.")
+                logging.warning(f"Não foi possível encontrar a entalpia de formação no arquivo {thermochemistry_path}.")
                 molecule.formation_enthalpy = None
 
         except Exception as e:

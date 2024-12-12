@@ -48,5 +48,5 @@
    GNU Lesser General Public License (LGPL) for more details.
 
  Command line input:
- $ crest butanol.xyz butanol.xyz --chrg 0 --uhf 0 -T 1 --gfn 2
+ $ crest hexanol.xyz hexanol.xyz --chrg 0 --uhf 0 -T 1 --gfn 2
 
