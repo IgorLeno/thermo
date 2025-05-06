@@ -11,12 +11,10 @@ def create_directory_structure():
         "utils",
         "final_molecules/output",
         "programs/crest",
-        "programs/xtb",
         "programs/OpenBabel",
         "repository/sdf",
         "repository/xyz",
         "repository/crest",
-        "repository/xtb",
         "tests"
     ]
 

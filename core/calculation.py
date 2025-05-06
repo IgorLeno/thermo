@@ -4,7 +4,7 @@ from typing import Optional
 @dataclass
 class CalculationParameters:
     """
-    Armazena os parâmetros para os cálculos com CREST e xTB.
+    Armazena os parâmetros para os cálculos com CREST.
     """
     n_threads: int = 1
     crest_method: str = "gfn2"  # Pode ser "gfn1", "gfn2" ou "gfnff"
@@ -28,22 +28,4 @@ class CalculationParameters:
         ]
         if self.solvent:
             command.extend(["--solv", self.solvent])
-        return command
-
-    def xtb_command(self, xyz_file: str, task: str) -> list:
-        """Retorna o comando para executar o xTB."""
-        command = [
-            "xtb",
-            xyz_file,
-            f"--{task}",
-            "--chrg", "0",
-            "--uhf", "0",
-            "-T", str(self.n_threads)
-        ]
-
-        if task == 'opt' and self.electronic_temperature:
-            command.extend(["--etemp", str(self.electronic_temperature)])
-
-        if self.solvent:
-            command.extend(["--gbsa", self.solvent])
         return command

@@ -10,21 +10,18 @@ PROGRAMS_DIR = ROOT_DIR / "programs"
 SDF_DIR = REPOSITORY_DIR / "sdf"
 XYZ_DIR = REPOSITORY_DIR / "xyz"
 CREST_DIR = REPOSITORY_DIR / "crest"
-XTB_DIR = REPOSITORY_DIR / "xtb"
 
 # Subdiretórios de PROGRAMS_DIR
 OPENBABEL_DIR = PROGRAMS_DIR / "OpenBabel"
 CREST_PROGRAM_DIR = PROGRAMS_DIR / "crest"
-XTB_PROGRAM_DIR = PROGRAMS_DIR / "xtb"
 
 # Subdiretórios de FINAL_MOLECULES_DIR
 OUTPUT_DIR = FINAL_MOLECULES_DIR / "output"
 
-# Arquivos
+# Arquivos CREST
 CREST_CONFORMERS_FILE = "crest_conformers.xyz"
 CREST_BEST_FILE = "crest_best.xyz"
-XTBOPT_FILE = "xtbopt.xyz"
-HESSIAN_FILE = "hessian"
-VIB_SPECTRUM_FILE = "vibspectrum"
-THERMOCHEMISTRY_FILE = "xtbhess.log" # Ou "thermochemistry" dependendo da versão do xTB
-G98_FILE = "g98.out"
+CREST_LOG_FILE = "crest.out"
+CREST_ENSEMBLE_FILE = ".crest_ensemble"
+CREST_ENERGIES_FILE = "crest.energies"
+CREST_ROTAMERS_FILE = "crest_rotamers.xyz"

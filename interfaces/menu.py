@@ -23,8 +23,8 @@ class Menu:
         """Exibe o menu principal e aguarda a escolha do usuário."""
         while True:
             print("\nMenu Principal:")
-            print("1. Calcular a entalpia de uma molécula")
-            print("2. Calcular a entalpia para várias moléculas")
+            print("1. Realizar busca conformacional para uma molécula")
+            print("2. Realizar busca conformacional para várias moléculas")
             print("3. Editar configurações")
             print("4. Resultados")
             print("5. Sair")
@@ -47,7 +47,7 @@ class Menu:
 
     def calculate_single_molecule(self):
         """
-        Solicita o nome da molécula ao usuário e realiza os cálculos.
+        Solicita o nome da molécula ao usuário e realiza a busca conformacional.
         """
         molecule_name = input("Digite o nome da molécula: ")
         molecule = Molecule(name=molecule_name)
@@ -55,7 +55,7 @@ class Menu:
 
     def calculate_multiple_molecules(self):
         """
-        Solicita uma lista de nomes de moléculas ou um arquivo e realiza os cálculos.
+        Solicita uma lista de nomes de moléculas ou um arquivo e realiza a busca conformacional.
         """
         input_method = input("Deseja digitar os nomes das moléculas (1) ou fornecer um arquivo com a lista (2)? ")
         if input_method == "1":
@@ -79,7 +79,7 @@ class Menu:
 
     def process_molecule(self, molecule: Molecule):
         """
-        Processa uma molécula, realizando os cálculos e armazenando os resultados.
+        Processa uma molécula, realizando a busca conformacional e armazenando os resultados.
         """
         try:
             # Baixa o SDF do PubChem
@@ -92,11 +92,15 @@ class Menu:
             # Converte o SDF para XYZ
             self.conversion_service.sdf_to_xyz(molecule)
 
-            # Executa os cálculos
+            # Executa a busca conformacional
             self.calculation_service.run_calculation(molecule)
             self.molecules.append(molecule)
 
-            print(f"Cálculos concluídos para {molecule.name}. Entalpia de formação: {molecule.formation_enthalpy:.2f} kcal/mol")
+            print(f"Busca conformacional concluída para {molecule.name}.")
+            if molecule.crest_best_path and os.path.exists(molecule.crest_best_path):
+                print(f"Melhor confôrmero encontrado: {molecule.crest_best_path}")
+            if molecule.crest_conformers_path and os.path.exists(molecule.crest_conformers_path):
+                print(f"Arquivo de confôrmeros: {molecule.crest_conformers_path}")
 
         except Exception as e:
             logging.error(f"Erro ao processar a molécula {molecule.name}: {e}")
@@ -110,11 +114,10 @@ class Menu:
             print(f"2. Método do CREST: {self.settings.calculation_params.crest_method}")
             print(f"3. Caminho do OpenBabel: {self.settings.openbabel_path}")
             print(f"4. Caminho do CREST: {self.settings.crest_path}")
-            print(f"5. Caminho do xTB: {self.settings.xtb_path}")
-            print(f"6. Temperatura eletrônica (Kelvin): {self.settings.calculation_params.electronic_temperature}")
-            print(f"7. Solvente: {self.settings.calculation_params.solvent}")
-            print("8. Salvar configurações")
-            print("9. Voltar ao menu principal")
+            print(f"5. Temperatura eletrônica (Kelvin): {self.settings.calculation_params.electronic_temperature}")
+            print(f"6. Solvente: {self.settings.calculation_params.solvent}")
+            print("7. Salvar configurações")
+            print("8. Voltar ao menu principal")
 
             choice = input("Escolha uma opção para editar: ")
 
@@ -127,32 +130,30 @@ class Menu:
             elif choice == "4":
                 self.settings.crest_path = input("Digite o novo caminho do CREST: ")
             elif choice == "5":
-                self.settings.xtb_path = input("Digite o novo caminho do xTB: ")
-            elif choice == "6":
                 self.settings.calculation_params.electronic_temperature = float(input("Digite a nova temperatura eletrônica (em Kelvin): "))
-            elif choice == "7":
+            elif choice == "6":
                 self.settings.calculation_params.solvent = input("Digite o nome do solvente (ou deixe em branco para nenhum): ")
-            elif choice == "8":
+            elif choice == "7":
                 filepath = input("Digite o caminho para salvar o arquivo de configuração: ")
                 self.settings.save_settings(filepath)
                 print("Configurações salvas com sucesso.")
-            elif choice == "9":
+            elif choice == "8":
                 break
             else:
                 print("Opção inválida.")
 
     def show_results(self):
-        """Exibe os resultados dos cálculos realizados."""
+        """Exibe os resultados das buscas conformacionais realizadas."""
         if not self.molecules:
-            print("Nenhum cálculo foi realizado ainda.")
+            print("Nenhuma busca conformacional foi realizada ainda.")
             return
 
         print("\nResultados:")
-        print(f"{'Molécula':<20} {'CID':<10} {'Entalpia de Formação (kcal/mol)':<35} {'Erros':<20}")
-        print("-" * 95)
+        print(f"{'Molécula':<20} {'CID':<10} {'Arquivo de Confôrmeros':<40}")
+        print("-" * 70)
         for molecule in self.molecules:
-            enthalpy_str = f"{molecule.formation_enthalpy:.2f}" if molecule.formation_enthalpy is not None else "N/A"
-            print(f"{molecule.name:<20} {str(molecule.pubchem_cid):<10} {enthalpy_str:<35}")
+            conf_path = os.path.basename(molecule.crest_conformers_path) if molecule.crest_conformers_path else "N/A"
+            print(f"{molecule.name:<20} {str(molecule.pubchem_cid):<10} {conf_path:<40}")
 
         # Opção para gerar um arquivo de resumo
         if input("Deseja gerar um arquivo de resumo (s/n)? ").lower() == "s":

@@ -6,14 +6,32 @@ from services.pubchem_service import PubChemService
 from services.conversion_service import ConversionService
 from services.calculation_service import CalculationService
 import logging
+import os
+from datetime import datetime
 
 def main():
     """
-    Função principal do programa thermo_grimme.
+    Função principal do programa conformer_search.
     """
-    # Configuração do logging
-    logging.basicConfig(filename='thermo_grimme.log', level=logging.INFO,
-                        format='%(asctime)s - %(levelname)s - %(message)s')
+    # Cria diretório de logs se não existir
+    log_dir = 'logs'
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Nome do arquivo de log com timestamp
+    log_filename = f'logs/conformer_search_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+    
+    # Configuração do logging com nível mais detalhado e exibindo no console também
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(module)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_filename),
+            logging.StreamHandler()  # Adiciona saída para o console
+        ]
+    )
+
+    logging.info("=== Iniciando o programa de busca conformacional ===")
+    logging.info(f"Log sendo salvo em: {log_filename}")
 
     # Carrega as configurações
     settings = Settings()
@@ -39,8 +57,9 @@ def main():
         cli.run()
         logging.info("Programa finalizado com sucesso.")
     except Exception as e:
-        logging.error(f"Erro inesperado: {e}")
+        logging.error(f"Erro inesperado: {e}", exc_info=True)  # Adiciona rastreamento de pilha
         print(f"Erro inesperado: {e}")
+        print(f"Consulte o log para mais detalhes: {log_filename}")
 
 if __name__ == "__main__":
     main()

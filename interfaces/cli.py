@@ -6,8 +6,12 @@ from services.file_service import FileService
 from services.pubchem_service import PubChemService
 from services.conversion_service import ConversionService
 from config.settings import Settings
+from config.constants import *
 from typing import List
 import logging
+import os
+import sys
+import time
 
 class CommandLineInterface:
     """
@@ -25,15 +29,19 @@ class CommandLineInterface:
 
     def run(self):
         """Exibe o menu principal e aguarda a escolha do usuário."""
+        print("\n==================================")
+        print("  Busca Conformacional com CREST ")
+        print("==================================")
+        
         while True:
             print("\nMenu Principal:")
-            print("1. Calcular a entalpia de uma molécula")
-            print("2. Calcular a entalpia para várias moléculas")
+            print("1. Realizar busca conformacional para uma molécula")
+            print("2. Realizar busca conformacional para várias moléculas")
             print("3. Editar configurações")
             print("4. Exibir resultados")
             print("5. Sair")
 
-            choice = input("Escolha uma opção: ")
+            choice = input("\nEscolha uma opção: ")
 
             if choice == "1":
                 molecule_name = input("Digite o nome da molécula: ")
@@ -59,54 +67,141 @@ class CommandLineInterface:
             elif choice == "4":
                 self.show_results()
             elif choice == "5":
-                print("Saindo do programa...")
+                print("\nSaindo do programa...")
                 break
             else:
                 print("Opção inválida. Tente novamente.")
 
     def calculate_single_molecule(self, molecule_name: str):
         """
-        Calcula a entalpia de uma única molécula.
+        Realiza busca conformacional para uma única molécula.
         """
-        molecule = Molecule(name=molecule_name)
-        self.process_molecule(molecule)
+        try:
+            print(f"\n=== Iniciando busca conformacional para {molecule_name} ===")
+            logging.info(f"Iniciando busca conformacional para {molecule_name}")
+            
+            molecule = Molecule(name=molecule_name)
+            self.process_molecule(molecule)
+            
+        except Exception as e:
+            logging.error(f"Erro ao processar molécula {molecule_name}: {e}", exc_info=True)
+            print(f"\nErro ao processar molécula {molecule_name}. Veja o arquivo de log para mais detalhes.")
 
     def calculate_multiple_molecules(self, molecule_names: List[str]):
         """
-        Calcula a entalpia de várias moléculas.
+        Realiza busca conformacional para várias moléculas.
         """
-        for name in molecule_names:
-            molecule = Molecule(name=name)
-            self.process_molecule(molecule)
+        if not molecule_names:
+            print("Nenhuma molécula para processar.")
+            return
+            
+        print(f"\n=== Iniciando busca conformacional para {len(molecule_names)} moléculas ===")
+        logging.info(f"Iniciando busca conformacional para {len(molecule_names)} moléculas: {molecule_names}")
+        
+        successful = 0
+        failed = 0
+        
+        for idx, name in enumerate(molecule_names, 1):
+            print(f"\n[{idx}/{len(molecule_names)}] Processando: {name}")
+            try:
+                molecule = Molecule(name=name)
+                result = self.process_molecule(molecule)
+                if result:
+                    successful += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                logging.error(f"Erro ao processar molécula {name}: {e}", exc_info=True)
+                print(f"Erro ao processar molécula {name}. Veja o arquivo de log para mais detalhes.")
+                failed += 1
+        
+        print(f"\n=== Busca conformacional concluída ===")
+        print(f"Total: {len(molecule_names)} molécula(s)")
+        print(f"Sucesso: {successful} molécula(s)")
+        print(f"Falha: {failed} molécula(s)")
+        
+        logging.info(f"Busca conformacional concluída. Total: {len(molecule_names)}, Sucesso: {successful}, Falha: {failed}")
 
     def process_molecule(self, molecule: Molecule):
         """
-        Processa uma molécula, realizando os cálculos e armazenando os resultados.
+        Processa uma molécula, realizando a busca conformacional e armazenando os resultados.
         """
         try:
+            start_time = time.time()
+            logging.info(f"Iniciando processamento da molécula: {molecule.name}")
+            
+            print(f"[1/4] Baixando estrutura do PubChem para {molecule.name}...")
             # Baixa o SDF do PubChem
             sdf_path, cid = self.pubchem_service.get_sdf_by_name(molecule.name)
             if sdf_path is None:
-                return  # Pula para a próxima molécula se o SDF não for encontrado
+                print(f"Molécula '{molecule.name}' não encontrada no PubChem.")
+                return False
+                
             molecule.sdf_path = sdf_path
             molecule.pubchem_cid = cid
+            print(f"      Estrutura baixada com sucesso. CID: {cid}")
 
+            print(f"[2/4] Convertendo SDF para XYZ utilizando OpenBabel...")
             # Converte o SDF para XYZ
             self.conversion_service.sdf_to_xyz(molecule)
+            print(f"      Conversão concluída: {molecule.xyz_path}")
 
-            # Executa os cálculos
+            print(f"[3/4] Executando busca conformacional com CREST...")
+            print(f"      Este processo pode demorar vários minutos. Por favor, aguarde...")
+            # Executa a busca conformacional
             self.calculation_service.run_calculation(molecule)
             self.molecules.append(molecule)
 
-            print(f"Cálculos concluídos para {molecule.name}.")
-            if molecule.formation_enthalpy is not None:
-                print(f"Entalpia de formação: {molecule.formation_enthalpy:.2f} kcal/mol")
-            else:
-                print(f"Não foi possível calcular a entalpia de formação para {molecule.name}.")
+            # Verifica os resultados no diretório final
+            final_dir = OUTPUT_DIR / molecule.name
+            
+            # Contagem de confôrmeros encontrados
+            conformers_count = 0
+            if os.path.exists(final_dir / CREST_CONFORMERS_FILE):
+                try:
+                    with open(final_dir / CREST_CONFORMERS_FILE, 'r') as f:
+                        conformers_count = sum(1 for line in f if line.strip() == molecule.name)
+                except:
+                    pass  # Ignora erros na contagem
+                    
+            print(f"[4/4] Organizando resultados da busca conformacional...")
+            
+            elapsed_time = time.time() - start_time
+            print(f"\n=== Busca conformacional de {molecule.name} concluída em {elapsed_time:.1f} segundos ===")
+            
+            # Verificar se os arquivos de saída existem
+            status = "CONCLUÍDO"
+            files_status = []
+            
+            for file, desc in [
+                (CREST_BEST_FILE, "Melhor confôrmero"),
+                (CREST_CONFORMERS_FILE, "Confôrmeros encontrados"),
+                (CREST_LOG_FILE, "Log do CREST"),
+                (CREST_ENERGIES_FILE, "Energias dos confôrmeros")
+            ]:
+                if os.path.exists(final_dir / file):
+                    files_status.append(f"✓ {desc}")
+                else:
+                    files_status.append(f"✗ {desc}")
+                    if file in [CREST_BEST_FILE, CREST_CONFORMERS_FILE]:
+                        status = "INCOMPLETO"
+            
+            print(f"Status: {status}")
+            for status in files_status:
+                print(f"  {status}")
+                
+            if conformers_count > 0:
+                print(f"Número de confôrmeros encontrados: {conformers_count}")
+                
+            print(f"Diretório com resultados: {final_dir}")
+            
+            logging.info(f"Processamento concluído para {molecule.name}. Status: {status}")
+            return True
 
         except Exception as e:
-            logging.error(f"Erro ao processar a molécula {molecule.name}: {e}")
-            print(f"Erro ao processar a molécula {molecule.name}. Veja o log para mais detalhes.")
+            logging.error(f"Erro ao processar a molécula {molecule.name}: {e}", exc_info=True)
+            print(f"\nErro ao processar a molécula {molecule.name}. Veja o log para mais detalhes.")
+            return False
 
     def edit_settings(self):
         """
@@ -118,54 +213,150 @@ class CommandLineInterface:
             print(f"2. Método do CREST: {self.settings.calculation_params.crest_method}")
             print(f"3. Caminho do OpenBabel: {self.settings.openbabel_path}")
             print(f"4. Caminho do CREST: {self.settings.crest_path}")
-            print(f"5. Caminho do xTB: {self.settings.xtb_path}")
-            print(f"6. Temperatura eletrônica (Kelvin): {self.settings.calculation_params.electronic_temperature}")
-            print(f"7. Solvente: {self.settings.calculation_params.solvent}")
-            print("8. Salvar configurações")
-            print("9. Voltar ao menu principal")
+            print(f"5. Temperatura eletrônica (Kelvin): {self.settings.calculation_params.electronic_temperature}")
+            print(f"6. Solvente: {self.settings.calculation_params.solvent or 'Nenhum'}")
+            print("7. Salvar configurações")
+            print("8. Voltar ao menu principal")
 
-            choice = input("Escolha uma opção para editar: ")
+            choice = input("\nEscolha uma opção para editar: ")
 
             if choice == "1":
-                self.settings.calculation_params.n_threads = int(input("Digite o novo número de threads: "))
+                try:
+                    threads = int(input("Digite o novo número de threads: "))
+                    if threads < 1:
+                        print("Número de threads deve ser pelo menos 1.")
+                    else:
+                        self.settings.calculation_params.n_threads = threads
+                        print(f"Número de threads atualizado para: {threads}")
+                except ValueError:
+                    print("Por favor, digite um número inteiro válido.")
             elif choice == "2":
-                self.settings.calculation_params.crest_method = input("Digite o novo método do CREST (gfn1, gfn2, gfnff): ")
+                method = input("Digite o novo método do CREST (gfn1, gfn2, gfnff): ").lower()
+                if method in ["gfn1", "gfn2", "gfnff"]:
+                    self.settings.calculation_params.crest_method = method
+                    print(f"Método CREST atualizado para: {method}")
+                else:
+                    print("Método inválido. Use gfn1, gfn2 ou gfnff.")
             elif choice == "3":
-                self.settings.openbabel_path = input("Digite o novo caminho do OpenBabel: ")
+                path = input("Digite o novo caminho do OpenBabel: ")
+                if os.path.exists(path):
+                    self.settings.openbabel_path = path
+                    print(f"Caminho do OpenBabel atualizado.")
+                else:
+                    print(f"Aviso: O caminho {path} não existe. Deseja continuar? (s/n)")
+                    if input().lower() == 's':
+                        self.settings.openbabel_path = path
+                        print(f"Caminho do OpenBabel atualizado.")
             elif choice == "4":
-                self.settings.crest_path = input("Digite o novo caminho do CREST: ")
+                path = input("Digite o novo caminho do CREST: ")
+                self.settings.crest_path = path
+                print(f"Caminho do CREST atualizado.")
             elif choice == "5":
-                self.settings.xtb_path = input("Digite o novo caminho do xTB: ")
+                try:
+                    temp = float(input("Digite a nova temperatura eletrônica (em Kelvin): "))
+                    if temp <= 0:
+                        print("A temperatura deve ser maior que 0 Kelvin.")
+                    else:
+                        self.settings.calculation_params.electronic_temperature = temp
+                        print(f"Temperatura eletrônica atualizada para: {temp} K")
+                except ValueError:
+                    print("Por favor, digite um número válido.")
             elif choice == "6":
-                self.settings.calculation_params.electronic_temperature = float(input("Digite a nova temperatura eletrônica (em Kelvin): "))
+                solvent = input("Digite o nome do solvente (ou deixe em branco para nenhum): ")
+                self.settings.calculation_params.solvent = solvent if solvent.strip() else None
+                if solvent.strip():
+                    print(f"Solvente atualizado para: {solvent}")
+                else:
+                    print("Solvente removido (cálculo em fase gasosa).")
             elif choice == "7":
-                self.settings.calculation_params.solvent = input("Digite o nome do solvente (ou deixe em branco para nenhum): ")
-            elif choice == "8":
-                filepath = input("Digite o caminho para salvar o arquivo de configuração: ")
+                filepath = input("Digite o caminho para salvar o arquivo de configuração (padrão: config.yaml): ")
+                if not filepath:
+                    filepath = "config.yaml"
                 self.settings.save_settings(filepath)
-                print("Configurações salvas com sucesso.")
-            elif choice == "9":
+                print(f"Configurações salvas com sucesso em: {filepath}")
+            elif choice == "8":
                 return
             else:
                 print("Opção inválida.")
 
     def show_results(self):
-        """Exibe os resultados dos cálculos realizados."""
+        """Exibe os resultados das buscas conformacionais realizadas."""
         if not self.molecules:
-            print("Nenhum cálculo foi realizado ainda.")
+            print("\nNenhuma busca conformacional foi realizada ainda nesta sessão.")
+            
+            # Verifica se há resultados de execuções anteriores
+            try:
+                output_dir = OUTPUT_DIR
+                if output_dir.exists():
+                    previous_results = [d for d in output_dir.iterdir() if d.is_dir()]
+                    if previous_results:
+                        print(f"\nResultados de execuções anteriores encontrados: {len(previous_results)} molécula(s)")
+                        print("\nMoléculas com resultados salvos:")
+                        for result_dir in previous_results:
+                            has_conformers = (result_dir / CREST_CONFORMERS_FILE).exists()
+                            has_best = (result_dir / CREST_BEST_FILE).exists()
+                            status = "Completo" if has_conformers and has_best else "Incompleto"
+                            print(f"  - {result_dir.name}: {status}")
+                        
+                        # Oferece opção para gerar resumo
+                        if input("\nDeseja gerar um arquivo de resumo para estes resultados? (s/n): ").lower() == "s":
+                            self._generate_summary_for_existing_results(previous_results)
+                            return
+            except Exception as e:
+                logging.error(f"Erro ao verificar resultados anteriores: {e}")
+            
             return
 
-        print("\nResultados:")
-        print(f"{'Molécula':<20} {'CID':<10} {'Entalpia de Formação (kcal/mol)':<35}")
-        print("-" * 65)
+        print("\nResultados das buscas conformacionais realizadas nesta sessão:")
+        print(f"{'Molécula':<20} {'CID':<10} {'Status':<15} {'Diretório de Saída':<40}")
+        print("-" * 85)
+        
         for molecule in self.molecules:
-            enthalpy_str = f"{molecule.formation_enthalpy:.2f}" if molecule.formation_enthalpy is not None else "N/A"
-            print(f"{molecule.name:<20} {str(molecule.pubchem_cid):<10} {enthalpy_str:<35}")
+            # Verifica se os arquivos existem no diretório final
+            output_dir = OUTPUT_DIR / molecule.name
+            if output_dir.exists():
+                has_conformers = (output_dir / CREST_CONFORMERS_FILE).exists()
+                has_best = (output_dir / CREST_BEST_FILE).exists()
+                status = "Completo" if has_conformers and has_best else "Incompleto"
+            else:
+                status = "Falha"
+            
+            print(f"{molecule.name:<20} {str(molecule.pubchem_cid):<10} {status:<15} {str(output_dir):<40}")
 
         # Opção para gerar um arquivo de resumo
-        if input("Deseja gerar um arquivo de resumo (s/n)? ").lower() == "s":
-            output_file = input("Digite o nome do arquivo de resumo: ")
+        if input("\nDeseja gerar um arquivo de resumo (s/n)? ").lower() == "s":
+            output_file = input("Digite o nome do arquivo de resumo (padrão: conformer_summary.txt): ")
+            if not output_file:
+                output_file = "conformer_summary.txt"
             if not output_file.endswith(".txt"):
                 output_file += ".txt"
             self.file_service.generate_summary(self.molecules, output_file)
             print(f"Arquivo de resumo gerado: {output_file}")
+            
+    def _generate_summary_for_existing_results(self, result_dirs):
+        """Gera um resumo para resultados existentes de execuções anteriores."""
+        try:
+            output_file = input("Digite o nome do arquivo de resumo (padrão: conformer_summary.txt): ")
+            if not output_file:
+                output_file = "conformer_summary.txt"
+            if not output_file.endswith(".txt"):
+                output_file += ".txt"
+                
+            with open(output_file, "w") as f:
+                f.write("Resumo da busca conformacional (execuções anteriores):\n\n")
+                f.write(f"{'Molécula':<20} {'Status':<15} {'Diretório':<40}\n")
+                f.write("-" * 75 + "\n")
+                
+                for result_dir in result_dirs:
+                    molecule_name = result_dir.name
+                    has_conformers = (result_dir / CREST_CONFORMERS_FILE).exists()
+                    has_best = (result_dir / CREST_BEST_FILE).exists()
+                    status = "Completo" if has_conformers and has_best else "Incompleto"
+                    
+                    f.write(f"{molecule_name:<20} {status:<15} {str(result_dir):<40}\n")
+                    
+            print(f"Arquivo de resumo gerado: {output_file}")
+            
+        except Exception as e:
+            logging.error(f"Erro ao gerar resumo para resultados existentes: {e}")
+            print(f"Erro ao gerar arquivo de resumo. Veja o log para mais detalhes.")

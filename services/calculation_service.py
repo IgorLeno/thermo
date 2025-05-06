@@ -1,5 +1,3 @@
-import re
-import shlex
 import subprocess
 import os
 from pathlib import Path
@@ -33,6 +31,7 @@ class CalculationService:
             # Cria o diretório de saída do CREST
             output_dir = CREST_DIR / molecule.name
             os.makedirs(output_dir, exist_ok=True)
+            molecule.crest_output_dir = str(output_dir)
             logging.info(f"Diretório de saída do CREST criado: {output_dir}")
 
             # Define o diretório do CREST no WSL e caminhos do conda
@@ -46,20 +45,42 @@ class CalculationService:
             
             # Copia o arquivo XYZ para o diretório WSL
             copy_command = f"cp '{wsl_xyz_path}' '{crest_wsl_dir}/{xyz_filename}'"
-            subprocess.run(
+            copy_result = subprocess.run(
                 ["wsl", "bash", "-c", copy_command],
                 capture_output=True,
                 text=True,
                 check=True
             )
+            logging.info(f"Arquivo XYZ copiado para WSL: {copy_result.stdout}")
+            if copy_result.stderr:
+                logging.warning(f"Avisos ao copiar XYZ: {copy_result.stderr}")
+
+            # Verifica se o arquivo foi copiado corretamente
+            check_file_command = f"ls -la '{crest_wsl_dir}/{xyz_filename}'"
+            check_file_result = subprocess.run(
+                ["wsl", "bash", "-c", check_file_command],
+                capture_output=True,
+                text=True
+            )
+            logging.info(f"Verificação do arquivo XYZ no WSL: {check_file_result.stdout}")
+            if check_file_result.returncode != 0:
+                raise FileNotFoundError(f"Arquivo XYZ não foi copiado corretamente para o WSL: {check_file_result.stderr}")
 
             # Cria um script shell temporário no WSL
             script_content = f'''#!/bin/bash
-    cd {crest_wsl_dir}
-    source /home/igor_fern/miniconda3/etc/profile.d/conda.sh
-    conda activate crest_env
-    ./crest ./{xyz_filename} --gfn2 -T {self.settings.calculation_params.n_threads} {'--solv ' + self.settings.calculation_params.solvent if self.settings.calculation_params.solvent else ''}
-    '''
+set -e  # Sair imediatamente se um comando falhar
+set -x  # Imprimir comandos e seus argumentos
+
+cd {crest_wsl_dir}
+source /home/igor_fern/miniconda3/etc/profile.d/conda.sh
+conda activate crest_env
+echo "Executando CREST para {xyz_filename}..."
+pwd
+ls -la ./{xyz_filename}
+./crest ./{xyz_filename} --gfn2 -T {self.settings.calculation_params.n_threads} {'--solv ' + self.settings.calculation_params.solvent if self.settings.calculation_params.solvent else ''}
+echo "CREST concluído, listando arquivos gerados:"
+ls -la ./crest_*.xyz ./.crest* ./crest.* 2>/dev/null || echo "Nenhum arquivo de resultado encontrado"
+'''
             
             # Salva o script no WSL
             script_path = f"{crest_wsl_dir}/run_crest.sh"
@@ -75,7 +96,7 @@ class CalculationService:
             )
 
             # Executa o script
-            crest_log_file = output_dir / "crest.log"
+            crest_log_file = output_dir / CREST_LOG_FILE
             logging.info("Executando CREST via script...")
             
             with open(crest_log_file, "w") as log_file:
@@ -86,6 +107,9 @@ class CalculationService:
                     text=True,
                     check=True
                 )
+            
+            if process.stderr:
+                logging.warning(f"Avisos ou erros do CREST: {process.stderr}")
 
             # Remove o script temporário
             subprocess.run(
@@ -96,32 +120,103 @@ class CalculationService:
             # Converte o caminho do diretório de saída para formato WSL
             output_dir_wsl = f"/mnt/{str(output_dir)[0].lower()}/{str(output_dir)[3:].replace('\\', '/')}"
             
-            # Move os arquivos gerados para o diretório de saída
-            move_command = f'''
-            for file in {crest_wsl_dir}/crest* {crest_wsl_dir}/TMPCONF*; do
-                if [ -f "$file" ]; then
-                    mv "$file" '{output_dir_wsl}/'
-                fi
-            done
-            '''
-            
+            # Garante que o diretório de destino exista no WSL
+            mkdir_command = f"mkdir -p '{output_dir_wsl}'"
             subprocess.run(
-                ["wsl", "bash", "-c", move_command],
+                ["wsl", "bash", "-c", mkdir_command],
                 check=True
             )
+            
+            # Copia (em vez de mover) os arquivos gerados para o diretório de saída
+            copy_files_command = f'''
+# Lista e imprime os arquivos que serão copiados para depuração
+echo "Arquivos disponíveis no diretório CREST:"
+ls -la {crest_wsl_dir}/crest_*.xyz {crest_wsl_dir}/.crest* {crest_wsl_dir}/crest.* 2>/dev/null || echo "Nenhum arquivo CREST encontrado"
 
-            # Remove o arquivo XYZ de entrada
+# Copia arquivos específicos que sabemos que são gerados
+cp {crest_wsl_dir}/crest_best.xyz '{output_dir_wsl}/' 2>/dev/null || echo "Arquivo crest_best.xyz não encontrado"
+cp {crest_wsl_dir}/crest_conformers.xyz '{output_dir_wsl}/' 2>/dev/null || echo "Arquivo crest_conformers.xyz não encontrado"
+cp {crest_wsl_dir}/crest.energies '{output_dir_wsl}/' 2>/dev/null || echo "Arquivo crest.energies não encontrado"
+cp {crest_wsl_dir}/.crest_ensemble '{output_dir_wsl}/' 2>/dev/null || echo "Arquivo .crest_ensemble não encontrado"
+
+# Verifica os arquivos copiados
+echo "Arquivos copiados para o diretório de saída:"
+ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou inacessível"
+'''
+            
+            # Execute o comando com saída de erro visível para depuração
+            copy_result = subprocess.run(
+                ["wsl", "bash", "-c", copy_files_command],
+                capture_output=True,
+                text=True
+            )
+            logging.info(f"Resultado da cópia de arquivos: {copy_result.stdout}")
+            if copy_result.stderr:
+                logging.warning(f"Erros na cópia de arquivos: {copy_result.stderr}")
+
+            # Verifica se os arquivos existem no WSL antes de definir os caminhos
+            check_command = f"ls -la '{output_dir_wsl}/crest_best.xyz' '{output_dir_wsl}/crest_conformers.xyz' 2>/dev/null || echo 'Arquivos não encontrados'"
+            check_result = subprocess.run(
+                ["wsl", "bash", "-c", check_command],
+                capture_output=True,
+                text=True
+            )
+
+            if "Arquivos não encontrados" not in check_result.stdout:
+                # Define os caminhos dos arquivos de saída importantes
+                molecule.crest_conformers_path = str(output_dir / CREST_CONFORMERS_FILE)
+                molecule.crest_best_path = str(output_dir / CREST_BEST_FILE)
+                logging.info(f"Arquivos de saída: {molecule.crest_conformers_path}, {molecule.crest_best_path}")
+            else:
+                logging.error("Arquivos de saída do CREST não foram encontrados após a execução.")
+                logging.info(f"Conteúdo do diretório de saída WSL: {check_result.stdout}")
+                
+                # Verificar se os arquivos foram gerados no diretório de trabalho do CREST
+                check_crest_dir = f"ls -la {crest_wsl_dir}/crest_*.xyz {crest_wsl_dir}/.crest* 2>/dev/null || echo 'Nenhum arquivo CREST encontrado'"
+                crest_dir_result = subprocess.run(
+                    ["wsl", "bash", "-c", check_crest_dir],
+                    capture_output=True,
+                    text=True
+                )
+                logging.info(f"Arquivos no diretório do CREST: {crest_dir_result.stdout}")
+                
+                # Tenta uma abordagem alternativa - copiar diretamente do WSL para o Windows usando cp.exe
+                alt_copy_command = f'''
+                for file in crest_best.xyz crest_conformers.xyz; do
+                    if [ -f "{crest_wsl_dir}/$file" ]; then
+                        echo "Tentando cópia alternativa de $file..."
+                        cp -v "{crest_wsl_dir}/$file" "{output_dir_wsl}/"
+                    fi
+                done
+                '''
+                alt_copy_result = subprocess.run(
+                    ["wsl", "bash", "-c", alt_copy_command],
+                    capture_output=True,
+                    text=True
+                )
+                logging.info(f"Resultado da cópia alternativa: {alt_copy_result.stdout}")
+                
+                # Verifica novamente se os arquivos foram copiados
+                recheck_command = f"ls -la '{output_dir_wsl}/'"
+                recheck_result = subprocess.run(
+                    ["wsl", "bash", "-c", recheck_command],
+                    capture_output=True,
+                    text=True
+                )
+                logging.info(f"Conteúdo final do diretório de saída: {recheck_result.stdout}")
+                
+                # Define os caminhos dos arquivos mesmo que não existam no Windows
+                # para que o FileService possa lidar com eles adequadamente
+                molecule.crest_conformers_path = str(output_dir / CREST_CONFORMERS_FILE)
+                molecule.crest_best_path = str(output_dir / CREST_BEST_FILE)
+
+            # Remove o arquivo XYZ de entrada do WSL
             subprocess.run(
                 ["wsl", "rm", "-f", f"{crest_wsl_dir}/{xyz_filename}"],
                 check=True
             )
-
-            # Define os caminhos dos arquivos de saída importantes
-            molecule.crest_conformers_path = str(output_dir / CREST_CONFORMERS_FILE)
-            molecule.crest_best_path = str(output_dir / CREST_BEST_FILE)
             
             logging.info(f"Busca conformacional com CREST concluída para {molecule.name}")
-            logging.info(f"Arquivos de saída: {molecule.crest_conformers_path}, {molecule.crest_best_path}")
 
         except subprocess.CalledProcessError as e:
             error_msg = f"Erro ao executar o CREST para a molécula {molecule.name}."
@@ -133,159 +228,86 @@ class CalculationService:
             logging.error(f"Erro ao executar o CREST para a molécula {molecule.name}: {e}")
             raise
 
-
-
-
-    def run_xtb_opt(self, molecule: Molecule):
-        """
-        Executa o xTB para otimização de geometria.
-        """
-        if not molecule.crest_best_path:
-            raise ValueError("Caminho do arquivo crest_best.xyz não definido.")
-
-        crest_best_path = Path(molecule.crest_best_path)
-        if not crest_best_path.exists():
-            raise FileNotFoundError(f"Arquivo de melhor confôrmero do CREST não encontrado: {molecule.crest_best_path}")
-
-        # Cria o diretório de saída do xTB
-        output_dir = XTB_DIR / molecule.name
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Define o caminho do arquivo de log do xTB
-        xtb_log_file = output_dir / "xtb_opt.log"
-
-        # Monta o comando do xTB para otimização
-        command = self.settings.calculation_params.xtb_command(str(crest_best_path), "opt")
-        command.insert(0, self.settings.xtb_path)
-
-        try:
-            with open(xtb_log_file, "w") as log_file:
-                process = subprocess.run(
-                    command,
-                    cwd=output_dir,
-                    stdout=log_file,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=True
-                )
-
-            # Define o caminho do arquivo de saída da otimização
-            molecule.xtb_opt_path = str(output_dir / XTBOPT_FILE)
-            logging.info(f"Otimização de geometria com xTB concluída para {molecule.name}.")
-
-        except subprocess.CalledProcessError as e:
-            error_msg = f"Erro ao executar a otimização com xTB para a molécula {molecule.name}."
-            if e.stderr:
-                error_msg += f"\nErro: {e.stderr}"
-            logging.error(error_msg)
-            raise RuntimeError(error_msg) from e
-        except Exception as e:
-            logging.error(f"Erro ao executar a otimização com xTB para a molécula {molecule.name}: {e}")
-            raise
-
-    def run_xtb_hess(self, molecule: Molecule):
-        """
-        Executa o xTB para cálculo da Hessiana e frequências vibracionais.
-        """
-        if not molecule.xtb_opt_path:
-            raise ValueError("Caminho do arquivo xtbopt.xyz não definido.")
-
-        xtb_opt_path = Path(molecule.xtb_opt_path)
-        if not xtb_opt_path.exists():
-            raise FileNotFoundError(f"Arquivo de geometria otimizada do xTB não encontrado: {molecule.xtb_opt_path}")
-
-        # Cria o diretório de saída do xTB
-        output_dir = XTB_DIR / molecule.name
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Define o caminho do arquivo de log do xTB
-        xtb_log_file = output_dir / "xtb_hess.log"
-
-        # Monta o comando do xTB para cálculo da Hessiana
-        command = self.settings.calculation_params.xtb_command(str(xtb_opt_path), "hess")
-        command.insert(0, self.settings.xtb_path)
-
-        try:
-            with open(xtb_log_file, "w") as log_file:
-                process = subprocess.run(
-                    command,
-                    cwd=output_dir,
-                    stdout=log_file,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=True
-                )
-
-            # Define os caminhos dos arquivos de saída do cálculo da Hessiana
-            molecule.hessian_path = str(output_dir / HESSIAN_FILE)
-            molecule.vibspectrum_path = str(output_dir / VIB_SPECTRUM_FILE)
-            molecule.thermochemistry_path = str(output_dir / THERMOCHEMISTRY_FILE)
-
-            logging.info(f"Cálculo da Hessiana e frequências vibracionais com xTB concluído para {molecule.name}.")
-
-        except subprocess.CalledProcessError as e:
-            error_msg = f"Erro ao executar o cálculo da Hessiana com xTB para a molécula {molecule.name}."
-            if e.stderr:
-                error_msg += f"\nErro: {e.stderr}"
-            logging.error(error_msg)
-            raise RuntimeError(error_msg) from e
-        except Exception as e:
-            logging.error(f"Erro ao executar o cálculo da Hessiana com xTB para a molécula {molecule.name}: {e}")
-            raise
-
-    def extract_formation_enthalpy(self, molecule: Molecule):
-        """
-        Extrai a entalpia de formação do arquivo de saída do xTB (xtbhess.log ou thermochemistry).
-        """
-        if not molecule.thermochemistry_path:
-            logging.warning(f"O caminho do arquivo de termoquímica não está definido para a molécula {molecule.name}.")
-            return
-        
-        thermochemistry_path = Path(molecule.thermochemistry_path)
-        if not thermochemistry_path.exists():
-            logging.warning(f"Arquivo de termoquímica do xTB não encontrado: {molecule.thermochemistry_path}.")
-            return
-
-        try:
-            with open(thermochemistry_path, "r") as f:
-                content = f.read()
-
-            # Expressão regular para encontrar a entalpia de formação
-            match = re.search(r"formation enthalpy\s+([\w-]+[\w]+)\s+([\d.-]+)\s+([\d.-]+)", content)
-
-            if match:
-                unit, value, _ = match.groups()
-                formation_enthalpy_au = float(value)
-                logging.info(f"Entalpia de formação extraída para {molecule.name}: {formation_enthalpy_au} {unit}")
-
-                # Converte de Hartree para kcal/mol (1 Hartree = 627.509 kcal/mol)
-                if unit == "Eh":
-                    formation_enthalpy_kcal_mol = formation_enthalpy_au * 627.509
-                else:
-                    formation_enthalpy_kcal_mol = formation_enthalpy_au
-                molecule.formation_enthalpy = formation_enthalpy_kcal_mol
-
-            else:
-                logging.warning(f"Não foi possível encontrar a entalpia de formação no arquivo {thermochemistry_path}.")
-                molecule.formation_enthalpy = None
-
-        except Exception as e:
-            logging.error(f"Erro ao extrair a entalpia de formação para {molecule.name}: {e}")
-            molecule.formation_enthalpy = None
-
     def run_calculation(self, molecule: Molecule):
         """
-        Executa o fluxo completo de cálculo para uma molécula: CREST, otimização xTB e Hessiana xTB.
+        Executa o fluxo simplificado de cálculo para uma molécula: apenas CREST.
         """
         try:
             self.run_crest(molecule)
-            self.run_xtb_opt(molecule)
-            self.run_xtb_hess(molecule)
-            self.extract_formation_enthalpy(molecule)
-
+            
+            # Verifica se os arquivos de saída existem antes de prosseguir
+            files_exist = True
+            if molecule.crest_best_path and not os.path.exists(molecule.crest_best_path):
+                logging.warning(f"Arquivo crest_best.xyz não encontrado: {molecule.crest_best_path}")
+                files_exist = False
+                
+            if molecule.crest_conformers_path and not os.path.exists(molecule.crest_conformers_path):
+                logging.warning(f"Arquivo crest_conformers.xyz não encontrado: {molecule.crest_conformers_path}")
+                files_exist = False
+            
+            if not files_exist:
+                logging.error(f"Arquivos de saída do CREST não foram encontrados após a execução para {molecule.name}.")
+                # Tenta uma abordagem alternativa - copiar diretamente do WSL para Windows
+                self._copy_crest_files_directly(molecule)
+            
             # Move os arquivos de saída para o diretório final
             self.file_service.move_output_files(molecule)
+            
+            # Verifica novamente se os arquivos foram movidos corretamente
+            output_dir = OUTPUT_DIR / molecule.name
+            if not (output_dir / CREST_BEST_FILE).exists() or not (output_dir / CREST_CONFORMERS_FILE).exists():
+                logging.warning(f"Arquivos CREST finais não foram encontrados em {output_dir}")
+            else:
+                logging.info(f"Arquivos CREST movidos com sucesso para {output_dir}")
 
         except Exception as e:
             logging.error(f"Erro durante o cálculo para a molécula {molecule.name}: {e}")
             print(f"Erro durante o cálculo para a molécula {molecule.name}. Veja o arquivo de log para mais detalhes.")
+            
+    def _copy_crest_files_directly(self, molecule):
+        """
+        Método auxiliar para tentar copiar os arquivos CREST diretamente do WSL para o Windows
+        quando os métodos normais falham.
+        """
+        try:
+            crest_wsl_dir = "/home/igor_fern/miniconda3/envs/crest_env/bin"
+            output_dir = CREST_DIR / molecule.name
+            
+            # Verifica se os arquivos existem no WSL
+            check_command = f"ls -la {crest_wsl_dir}/crest_best.xyz {crest_wsl_dir}/crest_conformers.xyz 2>/dev/null || echo 'Arquivos não encontrados'"
+            check_result = subprocess.run(
+                ["wsl", "bash", "-c", check_command],
+                capture_output=True,
+                text=True
+            )
+            
+            if "Arquivos não encontrados" in check_result.stdout:
+                logging.error(f"Arquivos CREST não encontrados no WSL: {check_result.stdout}")
+                return False
+                
+            logging.info(f"Tentando copiar arquivos diretamente do WSL: {check_result.stdout}")
+            
+            # Lê o conteúdo dos arquivos no WSL e os escreve diretamente no Windows
+            for file_name in ["crest_best.xyz", "crest_conformers.xyz"]:
+                cat_command = f"cat {crest_wsl_dir}/{file_name} 2>/dev/null || echo 'Arquivo não encontrado'"
+                cat_result = subprocess.run(
+                    ["wsl", "bash", "-c", cat_command],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if "Arquivo não encontrado" not in cat_result.stdout:
+                    # Escreve o conteúdo para o arquivo no Windows
+                    with open(output_dir / file_name, 'w') as f:
+                        f.write(cat_result.stdout)
+                    logging.info(f"Arquivo {file_name} copiado manualmente para {output_dir / file_name}")
+            
+            # Atualiza os caminhos da molécula
+            molecule.crest_best_path = str(output_dir / CREST_BEST_FILE)
+            molecule.crest_conformers_path = str(output_dir / CREST_CONFORMERS_FILE)
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"Erro ao tentar copiar arquivos diretamente: {e}")
+            return False

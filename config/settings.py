@@ -10,7 +10,6 @@ class Settings:
         self.calculation_params = CalculationParameters()
         self.openbabel_path = "obabel"  # Caminho padrão, pode ser alterado
         self.crest_path = "crest"
-        self.xtb_path = "xtb"
 
     def load_settings(self, filepath: str):
         """Carrega as configurações a partir de um arquivo YAML."""
@@ -21,7 +20,6 @@ class Settings:
             self.calculation_params = CalculationParameters(**config.get("calculation_parameters", {}))
             self.openbabel_path = config.get("openbabel_path", "obabel") # Carrega o caminho do OpenBabel do config.yaml
             self.crest_path = config.get("crest_path", "crest")
-            self.xtb_path = config.get("xtb_path", "xtb")
         except FileNotFoundError:
             print(f"Arquivo de configuração não encontrado: {filepath}")
             print("Usando configurações padrão.")
@@ -34,8 +32,7 @@ class Settings:
         config = {
             "calculation_parameters": asdict(self.calculation_params),
             "openbabel_path": self.openbabel_path,
-            "crest_path": self.crest_path,
-            "xtb_path": self.xtb_path
+            "crest_path": self.crest_path
         }
         try:
             with open(filepath, "w") as f:
