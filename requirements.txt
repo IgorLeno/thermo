@@ -6,4 +6,4 @@ enum
 re
 pyyaml
 pytest
-requests
+numpy

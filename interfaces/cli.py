@@ -5,6 +5,7 @@ from services.calculation_service import CalculationService
 from services.file_service import FileService
 from services.pubchem_service import PubChemService
 from services.conversion_service import ConversionService
+from interfaces.analysis_cli import AnalysisInterface
 from config.settings import Settings
 from config.constants import *
 from typing import List
@@ -39,7 +40,8 @@ class CommandLineInterface:
             print("2. Realizar busca conformacional para várias moléculas")
             print("3. Editar configurações")
             print("4. Exibir resultados")
-            print("5. Sair")
+            print("5. Analisar resultados")
+            print("6. Sair")
 
             choice = input("\nEscolha uma opção: ")
 
@@ -67,6 +69,8 @@ class CommandLineInterface:
             elif choice == "4":
                 self.show_results()
             elif choice == "5":
+                self.analyze_results()
+            elif choice == "6":
                 print("\nSaindo do programa...")
                 break
             else:
@@ -332,6 +336,11 @@ class CommandLineInterface:
                 output_file += ".txt"
             self.file_service.generate_summary(self.molecules, output_file)
             print(f"Arquivo de resumo gerado: {output_file}")
+            
+    def analyze_results(self):
+        """Inicia a interface de análise de resultados."""
+        analysis_interface = AnalysisInterface()
+        analysis_interface.run()
             
     def _generate_summary_for_existing_results(self, result_dirs):
         """Gera um resumo para resultados existentes de execuções anteriores."""

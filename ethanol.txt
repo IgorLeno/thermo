@@ -1,0 +1,5 @@
+Resumo da busca conformacional (execuções anteriores):
+
+Molécula             Status          Diretório                               
+---------------------------------------------------------------------------
+ethanol              Completo        c:\Users\ildsf\Downloads\TCC\grimme_thermo\final_molecules\output\ethanol
