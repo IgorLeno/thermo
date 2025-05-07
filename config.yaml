@@ -3,6 +3,10 @@ calculation_parameters:
   crest_method: gfn2
   electronic_temperature: 300.0
   solvent:
-openbabel_path: C:\Program Files\OpenBabel-3.1.1\obabel.exe
-crest_path: \\wsl.localhost\Ubuntu\home\igor_fern\miniconda3\envs\crest_env\bin\crest
+programs:
+  openbabel_path: C:\Program Files\OpenBabel-3.1.1\obabel.exe
+  crest_path: \\wsl.localhost\Ubuntu\home\igor_fern\miniconda3\envs\crest_env\bin\crest
+  mopac_path: C:\Repositorio\TCC\grimme_thermo\programs\MOPAC\MOPAC2016.exe
+mopac_params:
+  keywords: "PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000"
 

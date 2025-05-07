@@ -1,0 +1,11 @@
+2025-05-07 17:46:48,172 - INFO - main - === Iniciando o programa de busca conformacional e cálculo de entalpia ===
+2025-05-07 17:46:48,172 - INFO - main - Log sendo salvo em: logs/conformer_search_20250507_174648.log
+2025-05-07 17:46:48,175 - INFO - main - Configurações carregadas com sucesso.
+2025-05-07 17:47:14,410 - ERROR - main - Erro inesperado: EOF when reading a line
+Traceback (most recent call last):
+  File "C:\Repositorio\TCC\grimme_thermo\main.py", line 70, in main
+    cli.run()
+  File "C:\Repositorio\TCC\grimme_thermo\interfaces\cli.py", line 47, in run
+    choice = input("\nEscolha uma opção: ")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+EOFError: EOF when reading a line

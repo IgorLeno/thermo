@@ -1,7 +1,11 @@
 import subprocess
 import os
+import re
+import shutil
+import time  # Adicionando import de time
 from pathlib import Path
 import logging
+from typing import Optional, Dict, Any
 from core.molecule import Molecule
 from config.settings import Settings
 from services.file_service import FileService
@@ -13,6 +17,8 @@ class CalculationService:
         self.settings = settings
         self.file_service = file_service
         self.conversion_service = conversion_service
+        self.mopac_executable = str(settings.mopac_executable_path)
+        self.mopac_keywords = settings.mopac_keywords
 
     def run_crest(self, molecule: Molecule):
         """
@@ -109,7 +115,27 @@ ls -la ./crest_*.xyz ./.crest* ./crest.* 2>/dev/null || echo "Nenhum arquivo de 
                 )
             
             if process.stderr:
-                logging.warning(f"Avisos ou erros do CREST: {process.stderr}")
+                # Simplifica a mensagem de erro/aviso do CREST
+                stderr_lines = process.stderr.splitlines()
+                simplified_stderr = ""
+                
+                # Filtra as linhas relevantes (evita mostrar todo o PATH e outros detalhes verbosos)
+                for line in stderr_lines:
+                    if ("error" in line.lower() or 
+                        "warning" in line.lower() or 
+                        "executing crest" in line.lower() or
+                        "crest concluído" in line.lower()):
+                        simplified_stderr += line + "\n"
+                        
+                # Se ainda for muito longo, usa apenas o início e o fim
+                if len(simplified_stderr.splitlines()) > 5:
+                    top_lines = simplified_stderr.splitlines()[:2]
+                    bottom_lines = simplified_stderr.splitlines()[-2:]
+                    simplified_stderr = "\n".join(top_lines + ["..."] + bottom_lines)
+                
+                logging.warning(f"Avisos ou erros do CREST: {simplified_stderr}")
+            else:
+                logging.info("CREST executado sem erros ou avisos.")
 
             # Remove o script temporário
             subprocess.run(
@@ -228,14 +254,334 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
             logging.error(f"Erro ao executar o CREST para a molécula {molecule.name}: {e}")
             raise
 
+    def _convert_xyz_to_pdb(self, input_xyz_path: Path) -> Optional[Path]:
+        """Converte o XYZ do CREST para PDB e salva em repository/pdb/."""
+        if not input_xyz_path or not input_xyz_path.exists():
+            logging.error(f"Arquivo XYZ de entrada '{input_xyz_path}' não encontrado para conversão para PDB.")
+            return None
+
+        pdb_dir = PDB_DIR
+        pdb_dir.mkdir(parents=True, exist_ok=True)
+        output_pdb_path = pdb_dir / f"{self.molecule_data.name}.pdb"
+
+        try:
+            success = self.conversion_service.convert_file(
+                input_file_path=input_xyz_path,
+                output_file_path=output_pdb_path,
+                input_format="xyz",
+                output_format="pdb"
+            )
+            if success:
+                logging.info(f"Convertido {input_xyz_path} para {output_pdb_path}")
+                return output_pdb_path
+            else:
+                logging.error(f"Falha ao converter {input_xyz_path} para PDB.")
+                return None
+        except Exception as e:
+            logging.error(f"Erro durante a conversão XYZ para PDB: {e}")
+            return None
+
+    def _prepare_mopac_input_file(self, pdb_file_path: Path, mopac_work_dir: Path) -> Optional[Path]:
+        """Prepara o arquivo .dat para o MOPAC."""
+        if not pdb_file_path or not pdb_file_path.exists():
+            logging.error(f"Arquivo PDB '{pdb_file_path}' não encontrado para preparar input do MOPAC.")
+            return None
+        
+        # Primeiro, gera o arquivo .dat no diretório dat
+        dat_dir = DAT_DIR
+        dat_dir.mkdir(parents=True, exist_ok=True)
+        dat_file_path = dat_dir / f"{self.molecule_data.name}.dat"
+        
+        try:
+            with open(pdb_file_path, 'r') as f_pdb:
+                pdb_content = f_pdb.read()
+
+            # MOPAC espera palavras-chave, uma linha em branco (opcional, mas boa prática), depois as coordenadas.
+            # O arquivo PDB do OpenBabel já terá as coordenadas ATOM/HETATM e END.
+            mopac_input_content = f"{self.mopac_keywords}\n\n{pdb_content}" 
+
+            # Escreve o arquivo no diretório dat
+            with open(dat_file_path, 'w') as f_dat:
+                f_dat.write(mopac_input_content)
+            logging.info(f"Arquivo de entrada do MOPAC preparado: {dat_file_path}")
+            
+            # Garante que o diretório de trabalho do MOPAC existe
+            mopac_work_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Copia o arquivo para o diretório de trabalho do MOPAC
+            mopac_input_dat_path = mopac_work_dir / f"{self.molecule_data.name}.dat"
+            shutil.copy(dat_file_path, mopac_input_dat_path)
+            logging.info(f"Arquivo de entrada do MOPAC copiado para: {mopac_input_dat_path}")
+            
+            return dat_file_path
+        except Exception as e:
+            logging.error(f"Erro ao preparar arquivo de entrada do MOPAC: {e}")
+            return None
+
+    def _run_mopac(self, input_dat_path: Path, working_directory: Path) -> bool:
+        """Executa o MOPAC."""
+        try:
+            # Verifica se o arquivo de entrada existe
+            if not input_dat_path.exists():
+                logging.error(f"Arquivo de entrada do MOPAC não encontrado: {input_dat_path}")
+                return False
+                
+            # Verifica se o diretório de saída existe (para os resultados)
+            working_directory.mkdir(parents=True, exist_ok=True)
+            
+            # Diretório onde o MOPAC está instalado
+            mopac_install_dir = MOPAC_PROGRAM_DIR
+            if not Path(mopac_install_dir).exists():
+                logging.error(f"Diretório do MOPAC não encontrado: {mopac_install_dir}")
+                return False
+                
+            # Verifica se o executável do MOPAC existe
+            mopac_exec = Path(mopac_install_dir) / "MOPAC2016.exe"
+            if not mopac_exec.exists():
+                logging.error(f"Executável do MOPAC não encontrado: {mopac_exec}")
+                return False
+                
+            # Nome base do arquivo (sem extensão)
+            molecule_name = self.molecule_data.name
+            
+            # Copia o arquivo .dat para o diretório do MOPAC
+            mopac_input_file = Path(mopac_install_dir) / f"{molecule_name}.dat" 
+            try:
+                shutil.copy(input_dat_path, mopac_input_file)
+                logging.info(f"Arquivo de entrada copiado para diretório do MOPAC: {mopac_input_file}")
+            except Exception as e:
+                logging.error(f"Erro ao copiar arquivo de entrada para diretório do MOPAC: {e}")
+                return False
+                
+            # Executa o MOPAC no diretório correto
+            command = [str(mopac_exec), f"{molecule_name}"]
+            logging.info(f"Executando MOPAC no diretório {mopac_install_dir}: {' '.join(command)}")
+            
+            # Salva o diretório atual para restaurar depois
+            original_dir = os.getcwd()
+            
+            # Muda para o diretório do MOPAC para execução
+            os.chdir(mopac_install_dir)
+            
+            try:
+                # Executa o MOPAC
+                process = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    check=False
+                )
+                
+                # Verifica resultado
+                logging.info(f"MOPAC retornou código: {process.returncode}")
+                if process.stdout:
+                    logging.info(f"MOPAC stdout: {process.stdout}")
+                if process.stderr:
+                    logging.warning(f"MOPAC stderr: {process.stderr}")
+                
+                # Verifica se os arquivos de saída foram gerados
+                mopac_out_file = Path(mopac_install_dir) / f"{molecule_name}.out"
+                mopac_arc_file = Path(mopac_install_dir) / f"{molecule_name}.arc"
+                
+                if not mopac_out_file.exists() or not mopac_arc_file.exists():
+                    logging.error(f"Arquivos de saída do MOPAC não foram gerados: {mopac_out_file}, {mopac_arc_file}")
+                    # Método alternativo - usando shell=True com o caminho completo
+                    alt_command = f"{mopac_exec} {molecule_name}"
+                    logging.info(f"Tentando método alternativo: {alt_command}")
+                    
+                    alt_process = subprocess.run(
+                        alt_command,
+                        shell=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    logging.info(f"MOPAC alternativo retornou código: {alt_process.returncode}")
+                    if alt_process.stdout:
+                        logging.info(f"MOPAC stdout alternativo: {alt_process.stdout}")
+                    if alt_process.stderr:
+                        logging.warning(f"MOPAC stderr alternativo: {alt_process.stderr}")
+                
+                # Verifica novamente se os arquivos foram gerados
+                if mopac_out_file.exists() and mopac_arc_file.exists():
+                    # Move os arquivos de saída para o diretório de trabalho
+                    shutil.copy(mopac_out_file, working_directory / f"{molecule_name}.out")
+                    shutil.copy(mopac_arc_file, working_directory / f"{molecule_name}.arc")
+                    
+                    logging.info(f"Arquivos de saída do MOPAC movidos para: {working_directory}")
+                    
+                    # Limpa os arquivos temporários
+                    try:
+                        temp_files = [
+                            mopac_out_file,
+                            mopac_arc_file,
+                            mopac_input_file,
+                            Path(mopac_install_dir) / f"{molecule_name}.mgf"
+                        ]
+                        
+                        for temp_file in temp_files:
+                            if temp_file.exists():
+                                os.remove(temp_file)
+                                logging.info(f"Arquivo temporário removido: {temp_file}")
+                    except Exception as clean_e:
+                        logging.warning(f"Erro ao limpar arquivos temporários: {clean_e}")
+                    
+                    return True
+                else:
+                    logging.error(f"MOPAC falhou ao gerar os arquivos de saída mesmo após tentativas alternativas")
+                    return False
+                    
+            finally:
+                # Restaura o diretório original
+                os.chdir(original_dir)
+                
+        except Exception as e:
+            logging.error(f"Erro durante a execução do MOPAC: {e}")
+            try:
+                # Restaura o diretório original em caso de erro
+                os.chdir(original_dir)
+            except:
+                pass
+            return False
+
+        # Prepara o comando com o caminho absoluto do executável
+        command = [mopac_path, str(input_dat_path.name)] # MOPAC usa o nome do arquivo no cwd
+        logging.info(f"Executando MOPAC: {' '.join(command)} em {working_directory}")
+
+        try:
+            # Tenta executar o MOPAC com o comando completo
+            logging.info(f"Tentando executar MOPAC com comando: {command}")
+            
+            process = subprocess.run(
+                command,
+                cwd=str(working_directory), # MOPAC gera arquivos no diretório de trabalho
+                capture_output=True,
+                text=True,
+                check=False # Não levanta exceção para non-zero exit codes automaticamente
+            )
+            
+            # Arquivos esperados
+            mopac_out_file = working_directory / f"{self.molecule_data.name}.out"
+            mopac_arc_file = working_directory / f"{self.molecule_data.name}.arc"
+            
+            # Verifica resultado
+            logging.info(f"MOPAC retornou código: {process.returncode}")
+            if process.stdout:
+                logging.info(f"MOPAC stdout: {process.stdout}")
+            if process.stderr:
+                logging.warning(f"MOPAC stderr: {process.stderr}")
+            
+            # Se os arquivos existem, deu certo
+            if mopac_out_file.exists() and mopac_arc_file.exists():
+                logging.info(f"MOPAC concluído com sucesso. Arquivos gerados: {mopac_out_file}, {mopac_arc_file}")
+                return True
+                
+            # Se não funcionou, tenta abordagem alternativa
+            if process.returncode != 0 or not (mopac_out_file.exists() and mopac_arc_file.exists()):
+                logging.warning("Tentando método alternativo para executar o MOPAC...")
+                
+                # Usando cmd.exe explicitamente (melhor compatibilidade no Windows)
+                cmd_command = f'cd /d "{working_directory}" && "{command[0]}" {command[1]}'
+                logging.info(f"Comando alternativo: {cmd_command}")
+                
+                alt_process = subprocess.run(
+                    cmd_command,
+                    shell=True,
+                    capture_output=True,
+                    text=True
+                )
+                
+                logging.info(f"MOPAC alternativo retornou código: {alt_process.returncode}")
+                if alt_process.stdout:
+                    logging.info(f"MOPAC stdout alternativo: {alt_process.stdout}")
+                if alt_process.stderr:
+                    logging.warning(f"MOPAC stderr alternativo: {alt_process.stderr}")
+                
+                # Verifica novamente se os arquivos foram criados
+                if mopac_out_file.exists() and mopac_arc_file.exists():
+                    logging.info(f"MOPAC alternativo concluído com sucesso.")
+                    return True
+                else:
+                    logging.error(f"MOPAC falhou com ambos os métodos. Arquivos não encontrados em {working_directory}")
+                    # Lista os arquivos no diretório para diagnóstico
+                    try:
+                        files_in_dir = list(working_directory.glob("*"))
+                        logging.info(f"Arquivos no diretório após tentativas: {[f.name for f in files_in_dir]}")
+                    except Exception as dir_e:
+                        logging.error(f"Erro ao listar diretório: {dir_e}")
+                    return False
+            
+            # Se chegou aqui é porque funcionou na primeira tentativa
+            return True
+
+        except FileNotFoundError:
+            logging.error(f"Erro: Executável do MOPAC '{self.mopac_executable}' não encontrado. Verifique o caminho e as configurações.")
+            return False
+        except Exception as e:
+            logging.error(f"Erro durante a execução do MOPAC: {e}")
+            return False
+    
+    def _extract_mopac_enthalpy(self, mopac_output_file: Path) -> Optional[float]:
+        """Extrai a entalpia de formação do arquivo .out do MOPAC."""
+        if not mopac_output_file or not mopac_output_file.exists():
+            logging.error(f"Arquivo de saída do MOPAC '{mopac_output_file}' não encontrado para extração.")
+            return None
+        try:
+            with open(mopac_output_file, 'r') as f:
+                content = f.read()
+            
+            # Expressão regular para encontrar "FINAL HEAT OF FORMATION = xyz KCAL/MOL" ou "KJ/MOL"
+            # O valor pode ter sinal, ser decimal.
+            match = re.search(r"FINAL HEAT OF FORMATION\s*=\s*(-?\d+\.\d+)\s*(KCAL/MOL|KJ/MOL)", content, re.IGNORECASE)
+            if match:
+                enthalpy_value = float(match.group(1))
+                unit = match.group(2).upper()
+                logging.info(f"Entalpia de formação extraída do MOPAC: {enthalpy_value} {unit}")
+                return enthalpy_value
+            else:
+                logging.warning(f"Não foi possível encontrar 'FINAL HEAT OF FORMATION' no arquivo {mopac_output_file}")
+                return None
+        except Exception as e:
+            logging.error(f"Erro ao extrair entalpia do MOPAC: {e}")
+            return None
+
+    def _store_final_results(self):
+        """Armazena os resultados finais (ex: entalpia) em final_molecules."""
+        final_dir = FINAL_MOLECULES_DIR / "output" / self.molecule_data.name
+        final_dir.mkdir(parents=True, exist_ok=True)
+
+        summary_file = final_dir / "results_summary.txt"
+        with open(summary_file, 'w') as f:
+            f.write(f"Molécula: {self.molecule_data.name}\n")
+            f.write(f"Método de Entalpia: MOPAC ({self.mopac_keywords.split()[0] if self.mopac_keywords else 'N/A'})\n") # Ex: PM7
+            if self.molecule_data.enthalpy_formation_mopac is not None:
+                f.write(f"Entalpia de Formação: {self.molecule_data.enthalpy_formation_mopac} (unidade do MOPAC)\n")
+            else:
+                f.write("Entalpia de Formação: Não calculada ou erro.\n")
+            
+            f.write("\nCaminhos dos arquivos intermediários:\n")
+            f.write(f"  CREST best XYZ: {self.molecule_data.path_to_crest_best_xyz}\n")
+            f.write(f"  PDB para MOPAC: {self.molecule_data.converted_pdb_path}\n")
+            f.write(f"  MOPAC .dat: {self.molecule_data.mopac_input_dat_path}\n")
+            f.write(f"  MOPAC .out: {self.molecule_data.path_to_mopac_out}\n")
+        
+        logging.info(f"Resultados finais para {self.molecule_data.name} salvos em {summary_file}")
+
+        # Opcional: Copiar o MOPAC .out para final_dir também
+        if self.molecule_data.path_to_mopac_out and self.molecule_data.path_to_mopac_out.exists():
+            shutil.copy(self.molecule_data.path_to_mopac_out, final_dir)
+            
     def run_calculation(self, molecule: Molecule):
         """
-        Executa o fluxo simplificado de cálculo para uma molécula: apenas CREST.
+        Executa o fluxo completo de cálculo para uma molécula: CREST seguido de MOPAC.
         """
         try:
+            # Armazena a molécula como atributo da classe para acesso em outros métodos
+            self.molecule_data = molecule
+            
+            # Etapa CREST
             self.run_crest(molecule)
             
-            # Verifica se os arquivos de saída existem antes de prosseguir
+            # Verifica se os arquivos de saída do CREST existem antes de prosseguir
             files_exist = True
             if molecule.crest_best_path and not os.path.exists(molecule.crest_best_path):
                 logging.warning(f"Arquivo crest_best.xyz não encontrado: {molecule.crest_best_path}")
@@ -250,19 +596,65 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
                 # Tenta uma abordagem alternativa - copiar diretamente do WSL para Windows
                 self._copy_crest_files_directly(molecule)
             
-            # Move os arquivos de saída para o diretório final
-            self.file_service.move_output_files(molecule)
+            # Verifica novamente antes de prosseguir para MOPAC
+            if not molecule.path_to_crest_best_xyz or not molecule.path_to_crest_best_xyz.exists():
+                logging.error(f"Arquivo crest_best.xyz não encontrado após todas as tentativas. Não é possível prosseguir para MOPAC.")
+                return False
+                
+            logging.info("Etapa CREST concluída. Iniciando etapa MOPAC...")
             
-            # Verifica novamente se os arquivos foram movidos corretamente
-            output_dir = OUTPUT_DIR / molecule.name
-            if not (output_dir / CREST_BEST_FILE).exists() or not (output_dir / CREST_CONFORMERS_FILE).exists():
-                logging.warning(f"Arquivos CREST finais não foram encontrados em {output_dir}")
-            else:
-                logging.info(f"Arquivos CREST movidos com sucesso para {output_dir}")
+            # --- Etapa de Conversão XYZ (do CREST) para PDB ---
+            converted_pdb_path = self._convert_xyz_to_pdb(molecule.path_to_crest_best_xyz)
+            if not converted_pdb_path:
+                logging.error(f"Falha na conversão para PDB. Workflow interrompido para {molecule.name}.")
+                return False
+            molecule.converted_pdb_path = converted_pdb_path
 
+            # --- Etapa de Preparação do Input MOPAC ---
+            mopac_work_dir = MOPAC_DIR / molecule.name
+            mopac_input_dat = self._prepare_mopac_input_file(converted_pdb_path, mopac_work_dir)
+            if not mopac_input_dat:
+                logging.error(f"Falha na preparação do arquivo de entrada do MOPAC. Workflow interrompido para {molecule.name}.")
+                return False
+            molecule.mopac_input_dat_path = mopac_input_dat
+            molecule.mopac_output_directory = mopac_work_dir
+
+            # --- Etapa de Execução do MOPAC ---
+            # Usamos o arquivo .dat copiado no diretório mopac/molecule_name
+            mopac_exec_dat_path = mopac_work_dir / f"{self.molecule_data.name}.dat"
+            mopac_success = self._run_mopac(mopac_exec_dat_path, mopac_work_dir)
+            if not mopac_success:
+                logging.error(f"Falha na execução do MOPAC. Workflow interrompido para {molecule.name}.")
+                return False
+            
+            # --- Etapa de Extração da Entalpia do MOPAC ---
+            mopac_out_file = mopac_work_dir / f"{molecule.name}.out"
+            enthalpy = self._extract_mopac_enthalpy(mopac_out_file)
+            
+            # Atualizar o objeto Molecule com os resultados do MOPAC
+            molecule.set_mopac_results(
+                pdb_path=converted_pdb_path,
+                dat_path=mopac_input_dat,
+                output_dir=mopac_work_dir,
+                enthalpy=enthalpy
+            )
+
+            if enthalpy is not None:
+                logging.info(f"Entalpia de formação (MOPAC) para {molecule.name}: {enthalpy} (unidade conforme MOPAC output)")
+                self._store_final_results()
+            else:
+                logging.warning(f"Não foi possível obter a entalpia de formação do MOPAC para {molecule.name}.")
+            
+            # Nota: Não movemos arquivos para o diretório final_molecules
+            # Os arquivos CREST ficam em repository/crest, os MOPAC em repository/mopac
+            
+            logging.info(f"Workflow completo concluído para {molecule.name}.")
+            return True
+            
         except Exception as e:
             logging.error(f"Erro durante o cálculo para a molécula {molecule.name}: {e}")
             print(f"Erro durante o cálculo para a molécula {molecule.name}. Veja o arquivo de log para mais detalhes.")
+            return False
             
     def _copy_crest_files_directly(self, molecule):
         """

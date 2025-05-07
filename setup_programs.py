@@ -25,6 +25,7 @@ def download_file(url, destination):
 
 def install_crest():
     """Faz o download e instala o CREST."""
+    os.makedirs(PROGRAM_PATHS["crest"], exist_ok=True)
     crest_zip_path = PROGRAM_PATHS["crest"] / "crest-master.zip"
     download_file(CREST_URL, crest_zip_path)
 

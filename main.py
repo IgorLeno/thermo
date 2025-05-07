@@ -7,7 +7,17 @@ from services.conversion_service import ConversionService
 from services.calculation_service import CalculationService
 import logging
 import os
+from pathlib import Path
 from datetime import datetime
+from config.constants import PDB_DIR, MOPAC_DIR
+
+def setup_directories():
+    """
+    Configura os diretórios necessários para o programa.
+    """
+    # Diretórios para a etapa MOPAC
+    os.makedirs(PDB_DIR, exist_ok=True)
+    os.makedirs(MOPAC_DIR, exist_ok=True)
 
 def main():
     """
@@ -30,8 +40,11 @@ def main():
         ]
     )
 
-    logging.info("=== Iniciando o programa de busca conformacional ===")
+    logging.info("=== Iniciando o programa de busca conformacional e cálculo de entalpia ===")
     logging.info(f"Log sendo salvo em: {log_filename}")
+
+    # Configura os diretórios necessários
+    setup_directories()
 
     # Carrega as configurações
     settings = Settings()

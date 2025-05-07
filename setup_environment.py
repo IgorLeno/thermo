@@ -12,9 +12,12 @@ def create_directory_structure():
         "final_molecules/output",
         "programs/crest",
         "programs/OpenBabel",
+        "programs/MOPAC",
         "repository/sdf",
         "repository/xyz",
         "repository/crest",
+        "repository/pdb",
+        "repository/mopac",
         "tests"
     ]
 

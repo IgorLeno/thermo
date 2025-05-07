@@ -1,0 +1,135 @@
+2025-05-07 11:18:47,473 - INFO - main - === Iniciando o programa de busca conformacional ===
+2025-05-07 11:18:47,473 - INFO - main - Log sendo salvo em: logs/conformer_search_20250507_111847.log
+2025-05-07 11:18:47,481 - INFO - main - Configurações carregadas com sucesso.
+2025-05-07 11:18:52,684 - INFO - cli - Iniciando busca conformacional para ethanol
+2025-05-07 11:18:52,685 - INFO - cli - Iniciando processamento da molécula: ethanol
+2025-05-07 11:18:52,686 - DEBUG - connectionpool - Starting new HTTPS connection (1): pubchem.ncbi.nlm.nih.gov:443
+2025-05-07 11:18:53,149 - DEBUG - connectionpool - https://pubchem.ncbi.nlm.nih.gov:443 "GET /rest/pug/compound/name/ethanol/cids/TXT HTTP/11" 200 None
+2025-05-07 11:18:53,149 - DEBUG - connectionpool - Starting new HTTPS connection (1): pubchem.ncbi.nlm.nih.gov:443
+2025-05-07 11:18:53,601 - DEBUG - connectionpool - https://pubchem.ncbi.nlm.nih.gov:443 "GET /rest/pug/compound/cid/702/record/SDF/?record_type=3d&response_type=save HTTP/11" 200 None
+2025-05-07 11:18:53,602 - INFO - file_service - Diretório criado: c:\Repositorio\TCC\grimme_thermo\repository\sdf
+2025-05-07 11:18:53,613 - DEBUG - api - Encoding detection: ascii is most likely the one.
+2025-05-07 11:18:53,614 - INFO - pubchem_service - Arquivo SDF baixado para ethanol (CID: 702) em c:\Repositorio\TCC\grimme_thermo\repository\sdf\ethanol.sdf
+2025-05-07 11:18:54,355 - INFO - conversion_service - Arquivo c:\Repositorio\TCC\grimme_thermo\repository\sdf\ethanol.sdf convertido para c:\Repositorio\TCC\grimme_thermo\repository\xyz\ethanol.xyz com sucesso.
+2025-05-07 11:18:54,355 - WARNING - conversion_service - Mensagens do OpenBabel para ethanol: 1 molecule converted
+
+2025-05-07 11:18:54,355 - INFO - calculation_service - Encontrados resultados de execução anterior para ethanol
+2025-05-07 11:18:54,355 - INFO - calculation_service - Usando resultados CREST existentes para ethanol
+2025-05-07 11:18:54,355 - INFO - calculation_service - Iniciando cálculo de entalpia com MOPAC para ethanol...
+2025-05-07 11:18:54,355 - INFO - mopac_service - Convertendo c:\Repositorio\TCC\grimme_thermo\repository\crest\ethanol\crest_best.xyz para formato MOPAC...
+2025-05-07 11:18:54,393 - INFO - mopac_service - OpenBabel stdout: 
+2025-05-07 11:18:54,393 - INFO - mopac_service - OpenBabel stderr: 1 molecule converted
+
+2025-05-07 11:18:54,393 - INFO - mopac_service - Arquivo de input do MOPAC criado: repository\dat\ethanol.mop
+2025-05-07 11:18:54,393 - INFO - mopac_service - Conteúdo do arquivo MOPAC (primeiras 200 caracteres): PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000
+Calculation for ethanol
+
+PUT KEYWORDS HERE
+-11.39433939
+
+O    0.000000  1    0.000000  1    0.000000  1     0   0   0
+C    1.408538  ...
+2025-05-07 11:18:54,404 - INFO - mopac_service - Diretório de saída do MOPAC criado/verificado: c:\Repositorio\TCC\grimme_thermo\repository\mopac_opt\ethanol
+2025-05-07 11:18:54,405 - INFO - mopac_service - Arquivo de entrada do MOPAC copiado para: c:\Repositorio\TCC\grimme_thermo\repository\mopac_opt\ethanol\ethanol.mop
+2025-05-07 11:18:54,405 - INFO - mopac_service - Diretório atual alterado para: c:\Repositorio\TCC\grimme_thermo\repository\mopac_opt\ethanol
+2025-05-07 11:18:54,405 - INFO - mopac_service - Executando MOPAC para ethanol
+2025-05-07 11:18:54,409 - INFO - mopac_service - Comando MOPAC: . ethanol
+2025-05-07 11:18:54,409 - INFO - mopac_service - Tentando executar MOPAC: . ethanol
+2025-05-07 11:18:54,437 - INFO - mopac_service - MOPAC processo retornou código: 1
+2025-05-07 11:18:54,437 - INFO - mopac_service - MOPAC stdout: 
+2025-05-07 11:18:54,437 - WARNING - mopac_service - MOPAC stderr: '.' nÆo ‚ reconhecido como um comando interno
+ou externo, um programa oper vel ou um arquivo em lotes.
+
+2025-05-07 11:18:54,437 - ERROR - mopac_service - MOPAC falhou ao gerar o arquivo de saída usando shell=True
+2025-05-07 11:18:54,437 - ERROR - mopac_service - Código de retorno do MOPAC: 1
+2025-05-07 11:18:54,437 - INFO - mopac_service - Tentando método alternativo de execução do MOPAC...
+2025-05-07 11:18:54,437 - INFO - mopac_service - Arquivo de entrada copiado para diretório do MOPAC: ethanol.mop
+2025-05-07 11:18:54,437 - INFO - mopac_service - Mudando para diretório do MOPAC: .
+2025-05-07 11:18:54,473 - INFO - mopac_service - MOPAC alternativo retornou código: 1
+2025-05-07 11:18:54,473 - ERROR - mopac_service - MOPAC alternativo falhou ao gerar o arquivo de saída
+2025-05-07 11:18:54,474 - INFO - mopac_service - Arquivos no diretório após execução do MOPAC: ['.git', 'config', 'config.yaml', 'core', 'ethanol.txt', 'examples', 'final_molecules', 'interfaces', 'logs', 'main.py', 'programs', 'README.md', 'repository', 'requirements.txt', 'run.py', 'services', 'setup_environment.py', 'setup_programs.py', 'tests', 'utils', 'venv', '__init__.py']
+2025-05-07 11:18:54,475 - INFO - mopac_service - Diretório restaurado para: C:\Repositorio\TCC\grimme_thermo
+2025-05-07 11:18:54,476 - ERROR - calculation_service - Falha no cálculo MOPAC para ethanol.
+2025-05-07 11:18:54,477 - INFO - mopac_service - Resumo salvo em: c:\Repositorio\TCC\grimme_thermo\final_molecules\ethanol\summary_results.txt
+2025-05-07 11:18:54,478 - ERROR - cli - Falha no processamento completo da molécula ethanol
+2025-05-07 11:18:54,482 - INFO - cli - Processamento concluído para ethanol. Status CREST: CONCLUÍDO, Status MOPAC: FALHA
+2025-05-07 11:19:48,267 - INFO - cli - Iniciando busca conformacional para ethanol
+2025-05-07 11:19:48,267 - INFO - cli - Iniciando processamento da molécula: ethanol
+2025-05-07 11:19:48,267 - DEBUG - connectionpool - Starting new HTTPS connection (1): pubchem.ncbi.nlm.nih.gov:443
+2025-05-07 11:19:48,723 - DEBUG - connectionpool - https://pubchem.ncbi.nlm.nih.gov:443 "GET /rest/pug/compound/name/ethanol/cids/TXT HTTP/11" 200 None
+2025-05-07 11:19:48,723 - DEBUG - connectionpool - Starting new HTTPS connection (1): pubchem.ncbi.nlm.nih.gov:443
+2025-05-07 11:19:49,163 - DEBUG - connectionpool - https://pubchem.ncbi.nlm.nih.gov:443 "GET /rest/pug/compound/cid/702/record/SDF/?record_type=3d&response_type=save HTTP/11" 200 None
+2025-05-07 11:19:49,163 - INFO - file_service - Diretório criado: c:\Repositorio\TCC\grimme_thermo\repository\sdf
+2025-05-07 11:19:49,163 - DEBUG - api - Encoding detection: ascii is most likely the one.
+2025-05-07 11:19:49,163 - INFO - pubchem_service - Arquivo SDF baixado para ethanol (CID: 702) em c:\Repositorio\TCC\grimme_thermo\repository\sdf\ethanol.sdf
+2025-05-07 11:19:49,225 - INFO - conversion_service - Arquivo c:\Repositorio\TCC\grimme_thermo\repository\sdf\ethanol.sdf convertido para c:\Repositorio\TCC\grimme_thermo\repository\xyz\ethanol.xyz com sucesso.
+2025-05-07 11:19:49,226 - WARNING - conversion_service - Mensagens do OpenBabel para ethanol: 1 molecule converted
+
+2025-05-07 11:19:49,228 - INFO - calculation_service - Encontrados resultados de execução anterior para ethanol
+2025-05-07 11:19:49,228 - INFO - calculation_service - Usando resultados CREST existentes para ethanol
+2025-05-07 11:19:49,229 - INFO - calculation_service - Iniciando cálculo de entalpia com MOPAC para ethanol...
+2025-05-07 11:19:49,230 - INFO - mopac_service - Convertendo c:\Repositorio\TCC\grimme_thermo\repository\crest\ethanol\crest_best.xyz para formato MOPAC...
+2025-05-07 11:19:49,309 - INFO - mopac_service - OpenBabel stdout: 
+2025-05-07 11:19:49,310 - INFO - mopac_service - OpenBabel stderr: 1 molecule converted
+
+2025-05-07 11:19:49,311 - INFO - mopac_service - Arquivo de input do MOPAC criado: repository\dat\ethanol.mop
+2025-05-07 11:19:49,312 - INFO - mopac_service - Conteúdo do arquivo MOPAC (primeiras 200 caracteres): PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000
+Calculation for ethanol
+
+PUT KEYWORDS HERE
+-11.39433939
+
+O    0.000000  1    0.000000  1    0.000000  1     0   0   0
+C    1.408538  ...
+2025-05-07 11:19:49,315 - INFO - mopac_service - Diretório de saída do MOPAC criado/verificado: c:\Repositorio\TCC\grimme_thermo\repository\mopac_opt\ethanol
+2025-05-07 11:19:49,317 - INFO - mopac_service - Arquivo de entrada do MOPAC copiado para: c:\Repositorio\TCC\grimme_thermo\repository\mopac_opt\ethanol\ethanol.mop
+2025-05-07 11:19:49,318 - INFO - mopac_service - Diretório atual alterado para: c:\Repositorio\TCC\grimme_thermo\repository\mopac_opt\ethanol
+2025-05-07 11:19:49,318 - INFO - mopac_service - Executando MOPAC para ethanol
+2025-05-07 11:19:49,318 - INFO - mopac_service - Comando MOPAC: . ethanol
+2025-05-07 11:19:49,319 - INFO - mopac_service - Tentando executar MOPAC: . ethanol
+2025-05-07 11:19:49,359 - INFO - mopac_service - MOPAC processo retornou código: 1
+2025-05-07 11:19:49,359 - INFO - mopac_service - MOPAC stdout: 
+2025-05-07 11:19:49,359 - WARNING - mopac_service - MOPAC stderr: '.' nÆo ‚ reconhecido como um comando interno
+ou externo, um programa oper vel ou um arquivo em lotes.
+
+2025-05-07 11:19:49,359 - ERROR - mopac_service - MOPAC falhou ao gerar o arquivo de saída usando shell=True
+2025-05-07 11:19:49,359 - ERROR - mopac_service - Código de retorno do MOPAC: 1
+2025-05-07 11:19:49,359 - INFO - mopac_service - Tentando método alternativo de execução do MOPAC...
+2025-05-07 11:19:49,359 - INFO - mopac_service - Arquivo de entrada copiado para diretório do MOPAC: ethanol.mop
+2025-05-07 11:19:49,359 - INFO - mopac_service - Mudando para diretório do MOPAC: .
+2025-05-07 11:19:49,397 - INFO - mopac_service - MOPAC alternativo retornou código: 1
+2025-05-07 11:19:49,398 - ERROR - mopac_service - MOPAC alternativo falhou ao gerar o arquivo de saída
+2025-05-07 11:19:49,399 - INFO - mopac_service - Arquivos no diretório após execução do MOPAC: ['.git', 'config', 'config.yaml', 'core', 'ethanol.txt', 'examples', 'final_molecules', 'interfaces', 'logs', 'main.py', 'programs', 'README.md', 'repository', 'requirements.txt', 'run.py', 'services', 'setup_environment.py', 'setup_programs.py', 'tests', 'utils', 'venv', '__init__.py']
+2025-05-07 11:19:49,399 - INFO - mopac_service - Diretório restaurado para: C:\Repositorio\TCC\grimme_thermo
+2025-05-07 11:19:49,399 - ERROR - calculation_service - Falha no cálculo MOPAC para ethanol.
+2025-05-07 11:19:49,399 - INFO - mopac_service - Resumo salvo em: c:\Repositorio\TCC\grimme_thermo\final_molecules\ethanol\summary_results.txt
+2025-05-07 11:19:49,399 - ERROR - cli - Falha no processamento completo da molécula ethanol
+2025-05-07 11:19:49,417 - INFO - cli - Processamento concluído para ethanol. Status CREST: CONCLUÍDO, Status MOPAC: FALHA
+2025-05-07 11:20:02,388 - INFO - cli - Iniciando busca conformacional para propanol
+2025-05-07 11:20:02,388 - INFO - cli - Iniciando processamento da molécula: propanol
+2025-05-07 11:20:02,388 - DEBUG - connectionpool - Starting new HTTPS connection (1): pubchem.ncbi.nlm.nih.gov:443
+2025-05-07 11:20:02,802 - DEBUG - connectionpool - https://pubchem.ncbi.nlm.nih.gov:443 "GET /rest/pug/compound/name/propanol/cids/TXT HTTP/11" 200 None
+2025-05-07 11:20:02,818 - DEBUG - connectionpool - Starting new HTTPS connection (1): pubchem.ncbi.nlm.nih.gov:443
+2025-05-07 11:20:03,251 - DEBUG - connectionpool - https://pubchem.ncbi.nlm.nih.gov:443 "GET /rest/pug/compound/cid/1031/record/SDF/?record_type=3d&response_type=save HTTP/11" 200 None
+2025-05-07 11:20:03,251 - INFO - file_service - Diretório criado: c:\Repositorio\TCC\grimme_thermo\repository\sdf
+2025-05-07 11:20:03,267 - DEBUG - api - Encoding detection: ascii is most likely the one.
+2025-05-07 11:20:03,267 - INFO - pubchem_service - Arquivo SDF baixado para propanol (CID: 1031) em c:\Repositorio\TCC\grimme_thermo\repository\sdf\propanol.sdf
+2025-05-07 11:20:03,308 - INFO - conversion_service - Arquivo c:\Repositorio\TCC\grimme_thermo\repository\sdf\propanol.sdf convertido para c:\Repositorio\TCC\grimme_thermo\repository\xyz\propanol.xyz com sucesso.
+2025-05-07 11:20:03,308 - WARNING - conversion_service - Mensagens do OpenBabel para propanol: 1 molecule converted
+
+2025-05-07 11:20:03,308 - INFO - calculation_service - Iniciando fluxo de cálculo: CREST + MOPAC para propanol
+2025-05-07 11:20:03,308 - INFO - calculation_service - Iniciando a execução do CREST para a molécula: propanol
+2025-05-07 11:20:03,308 - INFO - calculation_service - Arquivo XYZ encontrado após conversão: c:\Repositorio\TCC\grimme_thermo\repository\xyz\propanol.xyz
+2025-05-07 11:20:03,308 - INFO - calculation_service - Diretório de saída do CREST criado: c:\Repositorio\TCC\grimme_thermo\repository\crest\propanol
+2025-05-07 11:20:17,854 - INFO - calculation_service - Script criado no WSL, primeiras linhas: #!/bin/bash
+set -e  # Sair imediatamente se um comando falhar
+set -x  # Imprimir comandos e seus argumentos
+
+# ParÃ¢metros estÃ¡ticos - sem variÃ¡veis
+
+2025-05-07 11:20:17,985 - INFO - calculation_service - Executando CREST via script para propanol...
+2025-05-07 11:20:18,001 - INFO - calculation_service - Executando script CREST no WSL: /tmp/run_crest_propanol.sh
+2025-05-07 11:20:18,001 - ERROR - calculation_service - Erro inesperado ao executar o script CREST: name 'time' is not defined
+2025-05-07 11:20:18,001 - ERROR - calculation_service - Busca conformacional com CREST falhou para propanol
+2025-05-07 11:20:18,001 - ERROR - cli - Falha no processamento completo da molécula propanol
+2025-05-07 11:20:18,009 - INFO - cli - Processamento concluído para propanol. Status CREST: INCOMPLETO, Status MOPAC: NÃO EXECUTADO

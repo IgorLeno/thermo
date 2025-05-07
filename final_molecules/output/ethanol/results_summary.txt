@@ -1,0 +1,9 @@
+Molécula: ethanol
+Método de Entalpia: MOPAC (PM7)
+Entalpia de Formação: -57.85803 (unidade do MOPAC)
+
+Caminhos dos arquivos intermediários:
+  CREST best XYZ: c:\Repositorio\TCC\grimme_thermo\repository\crest\ethanol\crest_best.xyz
+  PDB para MOPAC: c:\Repositorio\TCC\grimme_thermo\repository\pdb\ethanol.pdb
+  MOPAC .dat: c:\Repositorio\TCC\grimme_thermo\repository\dat\ethanol.dat
+  MOPAC .out: c:\Repositorio\TCC\grimme_thermo\repository\mopac\ethanol\ethanol.out

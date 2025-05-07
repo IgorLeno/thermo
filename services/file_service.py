@@ -3,6 +3,7 @@ import shutil
 import glob
 import logging
 from pathlib import Path
+from datetime import datetime
 from config.constants import *
 from core.molecule import Molecule
 
@@ -131,6 +132,40 @@ class FileService:
                     if self.move_file(str(crest_energies_path), dest_path):
                         moved_files.append(f"crest.energies -> {dest_path}")
             
+            # Move os arquivos MOPAC se existirem
+            if hasattr(molecule, 'path_to_mopac_out') and molecule.path_to_mopac_out and molecule.path_to_mopac_out.exists():
+                dest_path = molecule_output_dir / f"{molecule.name}.out"
+                if self.copy_file(str(molecule.path_to_mopac_out), dest_path):
+                    moved_files.append(f"{molecule.name}.out -> {dest_path}")
+                    
+            if hasattr(molecule, 'path_to_mopac_arc') and molecule.path_to_mopac_arc and molecule.path_to_mopac_arc.exists():
+                dest_path = molecule_output_dir / f"{molecule.name}.arc"
+                if self.copy_file(str(molecule.path_to_mopac_arc), dest_path):
+                    moved_files.append(f"{molecule.name}.arc -> {dest_path}")
+            else:
+                # Tenta encontrar o arquivo .arc no diretório do MOPAC
+                alt_arc_path = MOPAC_PROGRAM_DIR / f"{molecule.name}.arc"
+                if alt_arc_path.exists():
+                    dest_path = molecule_output_dir / f"{molecule.name}.arc"
+                    if self.copy_file(str(alt_arc_path), dest_path):
+                        moved_files.append(f"{molecule.name}.arc -> {dest_path} (do diretório MOPAC)")
+                    
+            if hasattr(molecule, 'converted_pdb_path') and molecule.converted_pdb_path and molecule.converted_pdb_path.exists():
+                dest_path = molecule_output_dir / f"{molecule.name}.pdb"
+                if self.copy_file(str(molecule.converted_pdb_path), dest_path):
+                    moved_files.append(f"{molecule.name}.pdb -> {dest_path}")
+            
+            # Cria um arquivo summary com os resultados
+            if hasattr(molecule, 'enthalpy_formation_mopac') and molecule.enthalpy_formation_mopac is not None:
+                summary_path = molecule_output_dir / "enthalpy_summary.txt"
+                try:
+                    with open(summary_path, 'w') as f:
+                        f.write(f"Molécula: {molecule.name}\n")
+                        f.write(f"Entalpia de formação (MOPAC): {molecule.enthalpy_formation_mopac}\n")
+                    moved_files.append(f"Arquivo de resumo criado: {summary_path}")
+                except Exception as sum_err:
+                    logging.error(f"Erro ao criar arquivo de resumo: {sum_err}")
+            
             # Verificar se algum arquivo foi movido
             if moved_files:
                 logging.info(f"Arquivos movidos para {molecule_output_dir}:")
@@ -172,19 +207,37 @@ class FileService:
         """
         try:
             with open(output_file, "w") as f:
-                f.write("Resumo da busca conformacional:\n\n")
-                f.write(f"{'Molécula':<20} {'CID':<10} {'Arquivo de Confôrmeros':<40} {'Status':<15}\n")
-                f.write("-" * 85 + "\n")
+                f.write("Resumo dos cálculos de busca conformacional e entalpia:\n\n")
+                f.write(f"{'Molécula':<15} {'CID':<8} {'CREST':<10} {'MOPAC':<10} {'Entalpia':<20}\n")
+                f.write("-" * 63 + "\n")
+                
                 for molecule in molecules:
-                    conf_path = os.path.basename(molecule.crest_conformers_path) if molecule.crest_conformers_path else "N/A"
+                    # Verifica status dos arquivos nos diretórios corretos
+                    crest_dir = CREST_DIR / molecule.name
+                    mopac_dir = MOPAC_DIR / molecule.name
                     
-                    # Verifica se os arquivos existem no diretório final
-                    final_dir = OUTPUT_DIR / molecule.name
-                    status = "Concluído"
-                    if not (final_dir / CREST_CONFORMERS_FILE).exists() or not (final_dir / CREST_BEST_FILE).exists():
-                        status = "Incompleto"
+                    # Status do CREST
+                    crest_status = "Concluído"
+                    if not (crest_dir / CREST_CONFORMERS_FILE).exists() or not (crest_dir / CREST_BEST_FILE).exists():
+                        crest_status = "Incompleto"
                     
-                    f.write(f"{molecule.name:<20} {molecule.pubchem_cid or 'N/A':<10} {conf_path:<40} {status:<15}\n")
+                    # Status do MOPAC
+                    mopac_status = "Concluído"
+                    if not (mopac_dir / f"{molecule.name}.out").exists() or not (mopac_dir / f"{molecule.name}.arc").exists():
+                        mopac_status = "Incompleto"
+                    
+                    # Informação de entalpia
+                    entalpia = "N/A"
+                    if hasattr(molecule, 'enthalpy_formation_mopac') and molecule.enthalpy_formation_mopac is not None:
+                        entalpia = f"{molecule.enthalpy_formation_mopac}"
+                    
+                    f.write(f"{molecule.name:<15} {molecule.pubchem_cid or 'N/A':<8} {crest_status:<10} {mopac_status:<10} {entalpia:<20}\n")
+                
+                # Adiciona informações sobre os métodos utilizados
+                f.write("\n\nDetalhes do cálculo:\n")
+                f.write(f"- Método CREST: {molecules[0].settings.calculation_params.crest_method if hasattr(molecules[0], 'settings') else 'gfn2'}\n")
+                f.write(f"- Método MOPAC: {molecules[0].settings.mopac_keywords.split()[0] if hasattr(molecules[0], 'settings') and hasattr(molecules[0].settings, 'mopac_keywords') else 'PM7'}\n")
+                f.write(f"- Data do cálculo: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             
             logging.info(f"Arquivo de resumo gerado: {output_file}")
             print(f"Arquivo de resumo gerado: {output_file}")
