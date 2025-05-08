@@ -1,0 +1,9 @@
+Molécula: propanol
+Método de Entalpia: MOPAC (PM7)
+Entalpia de Formação: -62.73536 (unidade do MOPAC)
+
+Caminhos dos arquivos intermediários:
+  CREST best XYZ: c:\Repositorio\TCC\grimme_thermo\repository\crest\propanol\crest_best.xyz
+  PDB para MOPAC: c:\Repositorio\TCC\grimme_thermo\repository\pdb\propanol.pdb
+  MOPAC .dat: c:\Repositorio\TCC\grimme_thermo\repository\dat\propanol.dat
+  MOPAC .out: c:\Repositorio\TCC\grimme_thermo\repository\mopac\propanol\propanol.out

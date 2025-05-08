@@ -1,0 +1,9 @@
+Molécula: butanol
+Método de Entalpia: MOPAC (PM7)
+Entalpia de Formação: -67.53047 (unidade do MOPAC)
+
+Caminhos dos arquivos intermediários:
+  CREST best XYZ: c:\Repositorio\TCC\grimme_thermo\repository\crest\butanol\crest_best.xyz
+  PDB para MOPAC: c:\Repositorio\TCC\grimme_thermo\repository\pdb\butanol.pdb
+  MOPAC .dat: c:\Repositorio\TCC\grimme_thermo\repository\dat\butanol.dat
+  MOPAC .out: c:\Repositorio\TCC\grimme_thermo\repository\mopac\butanol\butanol.out

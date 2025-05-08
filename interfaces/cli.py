@@ -173,8 +173,13 @@ class CommandLineInterface:
             print(f"[5/5] Organizando resultados...")
             self.molecules.append(molecule)
 
-            # Verifica os resultados no diretório final
+            # Verifica os resultados
             final_dir = OUTPUT_DIR / molecule.name
+            
+            # Definir diretórios aqui, antes de serem usados
+            crest_dir = CREST_DIR / molecule.name
+            mopac_dir = MOPAC_DIR / molecule.name
+            pdb_file = PDB_DIR / f"{molecule.name}.pdb"
             
             # Verificando contagem de confôrmeros
             conformers_count = 0
@@ -194,7 +199,6 @@ class CommandLineInterface:
             files_status = []
             
             # Verificar arquivos CREST no diretório repository/crest
-            crest_dir = CREST_DIR / molecule.name
             for file, desc in [
                 (CREST_BEST_FILE, "Melhor confôrmero (CREST)"),
                 (CREST_CONFORMERS_FILE, "Confôrmeros encontrados (CREST)"),
@@ -207,10 +211,6 @@ class CommandLineInterface:
                     files_status.append(f"✗ {desc}")
                     if file in [CREST_BEST_FILE, CREST_CONFORMERS_FILE]:
                         status = "INCOMPLETO"
-            
-            # Arquivos do MOPAC
-            mopac_dir = MOPAC_DIR / molecule.name
-            pdb_file = PDB_DIR / f"{molecule.name}.pdb"
             
             # Verificar arquivos MOPAC no diretório repository/mopac
             if os.path.exists(mopac_dir / f"{molecule.name}.out"):
