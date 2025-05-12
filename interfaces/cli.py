@@ -1,3 +1,4 @@
+
 # interfaces/cli.py
 import argparse
 import shutil
@@ -9,12 +10,13 @@ from services.conversion_service import ConversionService
 from interfaces.analysis_cli import AnalysisInterface
 from config.settings import Settings
 from config.constants import *
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 import logging
 import os
 import sys
 import time
+import webbrowser
 
 class CommandLineInterface:
     """
@@ -29,6 +31,20 @@ class CommandLineInterface:
         self.conversion_service = conversion_service or ConversionService(self.settings)
         self.calculation_service = calculation_service or CalculationService(self.settings, self.file_service, self.conversion_service)
         self.molecules = []
+        
+        # Inicializa o serviço Supabase se habilitado
+        self.supabase_service = None
+        if self.settings.supabase.enabled:
+            try:
+                from services.supabase_service import SupabaseService
+                self.supabase_service = SupabaseService(
+                    url=self.settings.supabase.url,
+                    key=self.settings.supabase.key
+                )
+            except ImportError:
+                logging.error("Biblioteca Supabase não encontrada. Execute 'pip install supabase'.")
+            except Exception as e:
+                logging.error(f"Erro ao inicializar serviço Supabase na interface: {e}")
 
     def run(self):
         """Exibe o menu principal e aguarda a escolha do usuário."""
@@ -37,6 +53,9 @@ class CommandLineInterface:
         print("  (CREST + MOPAC)                                 ")
         print("==================================================")
         
+        # Verifica se o Supabase está configurado
+        supabase_status = "Habilitado" if self.settings.supabase.enabled else "Desabilitado"
+        
         while True:
             print("\nMenu Principal:")
             print("1. Realizar cálculo completo para uma molécula")
@@ -44,7 +63,8 @@ class CommandLineInterface:
             print("3. Editar configurações")
             print("4. Exibir resultados")
             print("5. Analisar resultados")
-            print("6. Sair")
+            print(f"6. Configurar dashboard (Supabase: {supabase_status})")
+            print("7. Sair")
 
             choice = input("\nEscolha uma opção: ")
 
@@ -74,6 +94,8 @@ class CommandLineInterface:
             elif choice == "5":
                 self.analyze_results()
             elif choice == "6":
+                self.configure_dashboard()
+            elif choice == "7":
                 print("\nSaindo do programa...")
                 break
             else:
@@ -245,6 +267,10 @@ class CommandLineInterface:
             print(f"Diretório MOPAC: {mopac_dir}")
             print(f"Diretório PDB: {PDB_DIR}")
             
+            # Informa se os resultados foram enviados para o Supabase
+            if self.settings.supabase.enabled and self.supabase_service and self.supabase_service.enabled:
+                print(f"Resultados enviados para o dashboard Supabase.")
+            
             logging.info(f"Processamento concluído para {molecule.name}. Status: {status}")
             return True
 
@@ -272,6 +298,12 @@ class CommandLineInterface:
             print(f"3. Caminho do OpenBabel: {self.settings.openbabel_path}")
             print(f"4. Caminho do CREST: {self.settings.crest_path}")
             print(f"8. Caminho do MOPAC: {self.settings.mopac_executable_path}")
+            
+            print("\n== Configurações do Supabase ==")
+            print(f"10. Status do Supabase: {'Habilitado' if self.settings.supabase.enabled else 'Desabilitado'}")
+            print(f"11. URL da API do Supabase: {self.settings.supabase.url}")
+            print(f"12. Chave da API do Supabase: {'*' * 8 if self.settings.supabase.key else 'Não configurada'}")
+            print(f"13. Upload de arquivos para Storage: {'Habilitado' if self.settings.supabase.storage_enabled else 'Desabilitado'}")
             
             print("\n== Opções ==")
             print("9. Salvar configurações")
@@ -344,6 +376,32 @@ class CommandLineInterface:
                     filepath = "config.yaml"
                 self.settings.save_settings(filepath)
                 print(f"Configurações salvas com sucesso em: {filepath}")
+            elif choice == "10":
+                enable = input("Habilitar o Supabase? (s/n): ").lower()
+                self.settings.supabase.enabled = enable == "s"
+                print(f"Supabase {'habilitado' if self.settings.supabase.enabled else 'desabilitado'}.")
+            elif choice == "11":
+                url = input("Digite a URL da API do Supabase: ")
+                if url:
+                    self.settings.supabase.url = url
+                    print("URL da API atualizada.")
+                else:
+                    print("URL não alterada.")
+            elif choice == "12":
+                key = input("Digite a chave da API do Supabase: ")
+                if key:
+                    self.settings.supabase.key = key
+                    print("Chave da API atualizada.")
+                else:
+                    print("Chave não alterada.")
+            elif choice == "13":
+                enable = input("Habilitar upload de arquivos para o Storage? (s/n): ").lower()
+                self.settings.supabase.storage_enabled = enable == "s"
+                if self.settings.supabase.storage_enabled:
+                    bucket = input(f"Nome do bucket para armazenamento de arquivos (padrão: {self.settings.supabase.molecules_bucket}): ")
+                    if bucket:
+                        self.settings.supabase.molecules_bucket = bucket
+                print(f"Upload de arquivos {'habilitado' if self.settings.supabase.storage_enabled else 'desabilitado'}.")
             elif choice == "0":
                 return
             else:
@@ -420,6 +478,317 @@ class CommandLineInterface:
         """Inicia a interface de análise de resultados."""
         analysis_interface = AnalysisInterface()
         analysis_interface.run()
+    
+    def configure_dashboard(self):
+        """Configura e gerencia o dashboard Supabase."""
+        while True:
+            supabase_status = "Habilitado" if self.settings.supabase.enabled else "Desabilitado"
+            
+            print("\n===== Configuração do Dashboard =====")
+            print(f"Status do Supabase: {supabase_status}")
+            
+            if self.settings.supabase.enabled:
+                print(f"URL da API: {self.settings.supabase.url}")
+                print(f"Chave da API: {'*' * 8 if self.settings.supabase.key else 'Não configurada'}")
+                print(f"Upload de arquivos: {'Habilitado' if self.settings.supabase.storage_enabled else 'Desabilitado'}")
+            
+            print("\nOpções:")
+            print("1. Configurar credenciais do Supabase")
+            print("2. Testar conexão com o Supabase")
+            print("3. Sincronizar resultados existentes")
+            print("4. Abrir o dashboard no navegador")
+            print("5. Voltar ao menu principal")
+            
+            choice = input("\nEscolha uma opção: ")
+            
+            if choice == "1":
+                self._configure_supabase_credentials()
+            elif choice == "2":
+                self._test_supabase_connection()
+            elif choice == "3":
+                self._sync_existing_results()
+            elif choice == "4":
+                self._open_dashboard()
+            elif choice == "5":
+                break
+            else:
+                print("Opção inválida. Tente novamente.")
+    
+    def _configure_supabase_credentials(self):
+        """Configura as credenciais do Supabase."""
+        print("\n----- Configuração do Supabase -----")
+        
+        # Habilitar/desabilitar Supabase
+        enable = input(f"Habilitar o Supabase? ({'s' if self.settings.supabase.enabled else 'n'}): ").lower()
+        if enable:
+            self.settings.supabase.enabled = enable == "s"
+        
+        if not self.settings.supabase.enabled:
+            print("Supabase desabilitado.")
+            return
+        
+        # URL da API
+        url = input(f"URL da API do Supabase (atual: {self.settings.supabase.url}): ")
+        if url:
+            self.settings.supabase.url = url
+        
+        # Chave da API
+        key = input(f"Chave da API do Supabase (atual: {'*' * 8 if self.settings.supabase.key else 'Não configurada'}): ")
+        if key:
+            self.settings.supabase.key = key
+        
+        # Configurações de Storage
+        storage = input(f"Habilitar upload de arquivos para Storage? ({'s' if self.settings.supabase.storage_enabled else 'n'}): ").lower()
+        if storage:
+            self.settings.supabase.storage_enabled = storage == "s"
+        
+        if self.settings.supabase.storage_enabled:
+            bucket = input(f"Nome do bucket para armazenamento (atual: {self.settings.supabase.molecules_bucket}): ")
+            if bucket:
+                self.settings.supabase.molecules_bucket = bucket
+        
+        # Salvar configurações
+        save = input("Salvar configurações? (s/n): ").lower()
+        if save == "s":
+            self.settings.save_settings("config.yaml")
+            print("Configurações do Supabase salvas com sucesso.")
+            
+            # Reinicializa o serviço Supabase com as novas configurações
+            try:
+                from services.supabase_service import SupabaseService
+                self.supabase_service = SupabaseService(
+                    url=self.settings.supabase.url,
+                    key=self.settings.supabase.key
+                )
+                # Atualiza o serviço de cálculo também
+                if self.calculation_service:
+                    self.calculation_service.supabase_service = self.supabase_service
+            except ImportError:
+                print("Biblioteca Supabase não encontrada. Execute 'pip install supabase'.")
+            except Exception as e:
+                print(f"Erro ao inicializar serviço Supabase: {e}")
+    
+    def _test_supabase_connection(self):
+        """Testa a conexão com o Supabase."""
+        if not self.settings.supabase.enabled:
+            print("Supabase está desabilitado. Habilite-o primeiro.")
+            return
+        
+        print("\nTestando conexão com o Supabase...")
+        
+        try:
+            # Verifica se o serviço Supabase existe e está habilitado
+            if not self.supabase_service:
+                from services.supabase_service import SupabaseService
+                self.supabase_service = SupabaseService(
+                    url=self.settings.supabase.url,
+                    key=self.settings.supabase.key
+                )
+            
+            if not self.supabase_service.enabled:
+                print("Erro: Serviço Supabase não está habilitado. Verifique as credenciais.")
+                return
+            
+            # Tenta fazer uma consulta simples
+            try:
+                response = self.supabase_service.supabase.table("molecules").select("count", count="exact").execute()
+                count = response.count
+                print(f"Conexão bem-sucedida! {count} molécula(s) encontrada(s) no banco de dados.")
+                
+                # Testa o Storage se estiver habilitado
+                if self.settings.supabase.storage_enabled:
+                    storage_test = self.supabase_service.supabase.storage.get_bucket(self.settings.supabase.molecules_bucket)
+                    print(f"Conexão com o Storage bem-sucedida! Bucket '{self.settings.supabase.molecules_bucket}' está acessível.")
+            except Exception as e:
+                print(f"Erro ao acessar o banco de dados: {e}")
+                
+        except ImportError:
+            print("Erro: Biblioteca Supabase não encontrada. Execute 'pip install supabase'.")
+        except Exception as e:
+            print(f"Erro ao testar conexão: {e}")
+    
+    def _sync_existing_results(self):
+        """Sincroniza resultados existentes com o Supabase."""
+        if not self.settings.supabase.enabled:
+            print("Supabase está desabilitado. Habilite-o primeiro.")
+            return
+            
+        if not self.supabase_service or not self.supabase_service.enabled:
+            print("Serviço Supabase não está habilitado. Verifique a conexão.")
+            return
+        
+        print("\nBuscando resultados existentes...")
+        
+        try:
+            output_dir = OUTPUT_DIR
+            if not output_dir.exists():
+                print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
+                return
+                
+            molecule_dirs = [d for d in output_dir.iterdir() if d.is_dir()]
+            
+            if not molecule_dirs:
+                print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
+                return
+                
+            print(f"Encontrados {len(molecule_dirs)} molécula(s) com resultados.")
+            print("\nMoléculas disponíveis para sincronização:")
+            
+            for i, mol_dir in enumerate(molecule_dirs, 1):
+                print(f"{i}. {mol_dir.name}")
+            
+            choice = input("\nSincronizar todas as moléculas (t) ou escolher quais sincronizar (e)? ")
+            
+            molecules_to_sync = []
+            if choice.lower() == "t":
+                molecules_to_sync = [d.name for d in molecule_dirs]
+            elif choice.lower() == "e":
+                indices = input("Digite os números das moléculas a sincronizar, separados por vírgula: ")
+                try:
+                    selected = [int(idx.strip()) - 1 for idx in indices.split(",")]
+                    molecules_to_sync = [molecule_dirs[idx].name for idx in selected if 0 <= idx < len(molecule_dirs)]
+                except (ValueError, IndexError):
+                    print("Seleção inválida.")
+                    return
+            else:
+                print("Opção inválida.")
+                return
+            
+            if not molecules_to_sync:
+                print("Nenhuma molécula selecionada para sincronização.")
+                return
+            
+            print(f"\nSincronizando {len(molecules_to_sync)} molécula(s) com o Supabase...")
+            
+            from services.analysis.conformer_analyzer import ConformerAnalyzer
+            analyzer = ConformerAnalyzer()
+            
+            successful = 0
+            failed = 0
+            
+            for mol_name in molecules_to_sync:
+                print(f"Sincronizando {mol_name}...")
+                
+                try:
+                    # Criamos uma molécula temporária com os dados necessários
+                    molecule = Molecule(name=mol_name)
+                    
+                    # Configuramos os caminhos para os arquivos
+                    crest_dir = CREST_DIR / mol_name
+                    mopac_dir = MOPAC_DIR / mol_name
+                    
+                    molecule.crest_best_path = str(crest_dir / CREST_BEST_FILE)
+                    molecule.crest_conformers_path = str(crest_dir / CREST_CONFORMERS_FILE)
+                    
+                    # Verificamos e extraímos a entalpia se disponível
+                    mopac_out_file = mopac_dir / f"{mol_name}.out"
+                    if mopac_out_file.exists():
+                        # Use o método do CalculationService para extrair a entalpia
+                        enthalpy = self.calculation_service._extract_mopac_enthalpy(mopac_out_file)
+                        if enthalpy is not None:
+                            molecule.enthalpy_formation_mopac = enthalpy
+                    
+                    # Obtemos estatísticas dos confôrmeros
+                    conformer_stats = analyzer.get_conformer_statistics(mol_name)
+                    
+                    # Upload para o Supabase
+                    molecule_id = self.supabase_service.upload_molecule(molecule)
+                    
+                    if not molecule_id:
+                        print(f"Erro ao enviar molécula {mol_name} para o Supabase.")
+                        failed += 1
+                        continue
+                    
+                    # Upload de resultados CREST
+                    crest_params = {
+                        "n_threads": self.settings.calculation_params.n_threads,
+                        "method": self.settings.calculation_params.crest_method,
+                        "electronic_temperature": self.settings.calculation_params.electronic_temperature,
+                        "solvent": self.settings.calculation_params.solvent
+                    }
+                    
+                    crest_results = {
+                        "num_conformers": conformer_stats.get("num_conformers") if conformer_stats and conformer_stats.get("success", False) else None,
+                        "best_conformer_path": molecule.crest_best_path,
+                        "all_conformers_path": molecule.crest_conformers_path
+                    }
+                    
+                    # Adiciona estatísticas do conformador se disponíveis
+                    if conformer_stats and conformer_stats.get("success", False):
+                        crest_results["energy_distribution"] = conformer_stats.get("relative_energies", [])
+                        crest_results["relative_energies"] = conformer_stats.get("relative_energies", [])
+                        crest_results["populations"] = conformer_stats.get("populations", [])
+                    
+                    crest_success = self.supabase_service.upload_calculation_results(
+                        molecule_id=molecule_id,
+                        calculation_type="crest",
+                        status="completed",
+                        parameters=crest_params,
+                        results=crest_results
+                    )
+                    
+                    # Upload de resultados MOPAC se disponíveis
+                    mopac_success = True
+                    if hasattr(molecule, "enthalpy_formation_mopac") and molecule.enthalpy_formation_mopac is not None:
+                        mopac_params = {
+                            "keywords": self.settings.mopac_keywords
+                        }
+                        
+                        mopac_results = {
+                            "enthalpy_formation": molecule.enthalpy_formation_mopac,
+                            "method": self.settings.mopac_keywords.split()[0] if self.settings.mopac_keywords else None,
+                            "output_path": str(mopac_out_file) if mopac_out_file.exists() else None
+                        }
+                        
+                        mopac_success = self.supabase_service.upload_calculation_results(
+                            molecule_id=molecule_id,
+                            calculation_type="mopac",
+                            status="completed",
+                            parameters=mopac_params,
+                            results=mopac_results
+                        )
+                    
+                    if crest_success and mopac_success:
+                        print(f"✓ {mol_name} sincronizado com sucesso!")
+                        successful += 1
+                    else:
+                        print(f"✗ Erro parcial ao sincronizar {mol_name}.")
+                        failed += 1
+                        
+                except Exception as e:
+                    print(f"✗ Erro ao sincronizar {mol_name}: {e}")
+                    failed += 1
+            
+            print(f"\nSincronização concluída: {successful} sucesso(s), {failed} falha(s).")
+            
+        except Exception as e:
+            print(f"Erro durante a sincronização: {e}")
+    
+    def _open_dashboard(self):
+        """Abre o dashboard Supabase no navegador."""
+        if not self.settings.supabase.enabled:
+            print("Supabase está desabilitado. Habilite-o primeiro.")
+            return
+        
+        # Extrai o domínio do projeto a partir da URL da API
+        if not self.settings.supabase.url:
+            print("URL da API do Supabase não configurada.")
+            return
+        
+        try:
+            # A URL da API é geralmente algo como: https://xyzabc.supabase.co/rest/v1/
+            # Precisamos extrair a parte https://xyzabc.supabase.co
+            parts = self.settings.supabase.url.split("/")
+            if len(parts) >= 3:
+                base_url = f"{parts[0]}//{parts[2]}"
+                dashboard_url = f"{base_url}/dashboard/"
+                
+                print(f"Abrindo dashboard Supabase em: {dashboard_url}")
+                webbrowser.open(dashboard_url)
+            else:
+                print("Formato de URL inválido.")
+        except Exception as e:
+            print(f"Erro ao abrir o dashboard: {e}")
             
     def _generate_summary_for_existing_results(self, result_dirs):
         """Gera um resumo para resultados existentes de execuções anteriores."""

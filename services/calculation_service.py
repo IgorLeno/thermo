@@ -2,7 +2,8 @@ import subprocess
 import os
 import re
 import shutil
-import time  # Adicionando import de time
+import time
+import json
 from pathlib import Path
 import logging
 from typing import Optional, Dict, Any
@@ -11,6 +12,7 @@ from config.settings import Settings
 from services.file_service import FileService
 from services.conversion_service import ConversionService
 from config.constants import *
+from services.analysis.conformer_analyzer import ConformerAnalyzer
 
 class CalculationService:
     def __init__(self, settings: Settings, file_service: FileService, conversion_service: ConversionService):
@@ -19,6 +21,24 @@ class CalculationService:
         self.conversion_service = conversion_service
         self.mopac_executable = str(settings.mopac_executable_path)
         self.mopac_keywords = settings.mopac_keywords
+        
+        # Inicializa o serviço Supabase se estiver habilitado nas configurações
+        self.supabase_service = None
+        if settings.supabase.enabled:
+            try:
+                from services.supabase_service import SupabaseService
+                self.supabase_service = SupabaseService(
+                    url=settings.supabase.url,
+                    key=settings.supabase.key
+                )
+                if self.supabase_service.enabled:
+                    logging.info("Serviço Supabase inicializado com sucesso.")
+                else:
+                    logging.warning("Supabase habilitado nas configurações, mas a conexão falhou.")
+            except ImportError:
+                logging.error("Biblioteca Supabase não encontrada. Execute 'pip install supabase'.")
+            except Exception as e:
+                logging.error(f"Erro ao inicializar serviço Supabase: {e}")
 
     def run_crest(self, molecule: Molecule):
         """
@@ -648,6 +668,10 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
             # Nota: Não movemos arquivos para o diretório final_molecules
             # Os arquivos CREST ficam em repository/crest, os MOPAC em repository/mopac
             
+            # Enviar resultados para o Supabase se habilitado
+            if self.supabase_service and self.supabase_service.enabled:
+                self._upload_results_to_supabase(molecule)
+            
             logging.info(f"Workflow completo concluído para {molecule.name}.")
             return True
             
@@ -702,4 +726,123 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
             
         except Exception as e:
             logging.error(f"Erro ao tentar copiar arquivos diretamente: {e}")
+            return False
+            
+    def _upload_results_to_supabase(self, molecule: Molecule) -> bool:
+        """
+        Envia os resultados do cálculo para o Supabase.
+        
+        Args:
+            molecule: Objeto Molecule com os dados da molécula
+            
+        Returns:
+            True se o upload foi bem-sucedido, False caso contrário
+        """
+        if not self.supabase_service or not self.supabase_service.enabled:
+            logging.warning("Serviço Supabase não está habilitado. Não será feito upload dos resultados.")
+            return False
+            
+        try:
+            logging.info(f"Enviando resultados de {molecule.name} para o Supabase...")
+            
+            # Obter o ID da molécula (ou criar se não existir)
+            molecule_id = self.supabase_service.upload_molecule(molecule)
+            if not molecule_id:
+                logging.error(f"Erro ao enviar a molécula {molecule.name} para o Supabase.")
+                return False
+                
+            # Prepara os parâmetros e resultados do CREST
+            crest_params = {
+                "n_threads": self.settings.calculation_params.n_threads,
+                "method": self.settings.calculation_params.crest_method,
+                "electronic_temperature": self.settings.calculation_params.electronic_temperature,
+                "solvent": self.settings.calculation_params.solvent
+            }
+            
+            # Obter estatísticas dos confôrmeros
+            analyzer = ConformerAnalyzer()
+            conformer_stats = analyzer.get_conformer_statistics(molecule.name)
+            
+            # Upload de arquivos para o Storage, se habilitado
+            best_conformer_url = None
+            all_conformers_url = None
+            
+            if self.settings.supabase.storage_enabled:
+                bucket_name = self.settings.supabase.molecules_bucket
+                
+                if molecule.crest_best_path and Path(molecule.crest_best_path).exists():
+                    best_conformer_url = self.supabase_service.upload_file(
+                        file_path=molecule.crest_best_path,
+                        bucket_name=bucket_name,
+                        file_name=f"{molecule.name}/crest_best.xyz"
+                    )
+                    
+                if molecule.crest_conformers_path and Path(molecule.crest_conformers_path).exists():
+                    all_conformers_url = self.supabase_service.upload_file(
+                        file_path=molecule.crest_conformers_path,
+                        bucket_name=bucket_name,
+                        file_name=f"{molecule.name}/crest_conformers.xyz"
+                    )
+            
+            # Preparar resultados do CREST com caminhos locais ou URLs
+            crest_results = {
+                "num_conformers": len(molecule.conformer_energies) if hasattr(molecule, 'conformer_energies') and molecule.conformer_energies else None,
+                "best_conformer_path": best_conformer_url or molecule.crest_best_path,
+                "all_conformers_path": all_conformers_url or molecule.crest_conformers_path
+            }
+            
+            # Adicionar estatísticas do conformador se disponíveis
+            if conformer_stats and conformer_stats.get('success', False):
+                crest_results["energy_distribution"] = conformer_stats.get("relative_energies", [])
+                crest_results["relative_energies"] = conformer_stats.get("relative_energies", [])
+                crest_results["populations"] = conformer_stats.get("populations", [])
+            
+            # Enviar resultados CREST
+            crest_success = self.supabase_service.upload_calculation_results(
+                molecule_id=molecule_id,
+                calculation_type="crest",
+                status="completed",
+                parameters=crest_params,
+                results=crest_results
+            )
+            
+            # Upload do arquivo MOPAC para o Storage, se habilitado
+            mopac_output_url = None
+            
+            if self.settings.supabase.storage_enabled and molecule.path_to_mopac_out and molecule.path_to_mopac_out.exists():
+                bucket_name = self.settings.supabase.molecules_bucket
+                mopac_output_url = self.supabase_service.upload_file(
+                    file_path=molecule.path_to_mopac_out,
+                    bucket_name=bucket_name,
+                    file_name=f"{molecule.name}/mopac.out"
+                )
+            
+            # Enviar resultados MOPAC
+            mopac_params = {
+                "keywords": self.mopac_keywords
+            }
+            
+            mopac_results = {
+                "enthalpy_formation": molecule.enthalpy_formation_mopac,
+                "method": self.mopac_keywords.split()[0] if self.mopac_keywords else None,
+                "output_path": mopac_output_url or str(molecule.path_to_mopac_out) if molecule.path_to_mopac_out else None
+            }
+            
+            mopac_success = self.supabase_service.upload_calculation_results(
+                molecule_id=molecule_id,
+                calculation_type="mopac",
+                status="completed" if molecule.enthalpy_formation_mopac is not None else "failed",
+                parameters=mopac_params,
+                results=mopac_results
+            )
+            
+            if crest_success and mopac_success:
+                logging.info(f"Resultados de {molecule.name} enviados com sucesso para o Supabase.")
+                return True
+            else:
+                logging.warning(f"Pelo menos um dos uploads de {molecule.name} falhou: CREST={crest_success}, MOPAC={mopac_success}")
+                return False
+                
+        except Exception as e:
+            logging.error(f"Erro ao enviar resultados de {molecule.name} para o Supabase: {e}")
             return False
