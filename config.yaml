@@ -14,5 +14,5 @@ supabase:
   key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dnZ1Z3VrdGxrdHdqd2hvcHBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwMjgxOTMsImV4cCI6MjA2MjYwNDE5M30.XS6tT47gZtLpbUHHIoXcXinvoSywiHUeAxpSclEn4cA
   storage:
     enabled: true
-    molecules_bucket: molecule-files
+    molecules_bucket: s
   url: https://iyvvuguktlktwjwhoppf.supabase.co
