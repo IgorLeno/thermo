@@ -770,19 +770,24 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
             if self.settings.supabase.storage_enabled:
                 bucket_name = self.settings.supabase.molecules_bucket
                 
-                if molecule.crest_best_path and Path(molecule.crest_best_path).exists():
-                    best_conformer_url = self.supabase_service.upload_file(
-                        file_path=molecule.crest_best_path,
-                        bucket_name=bucket_name,
-                        file_name=f"{molecule.name}/crest_best.xyz"
-                    )
-                    
-                if molecule.crest_conformers_path and Path(molecule.crest_conformers_path).exists():
-                    all_conformers_url = self.supabase_service.upload_file(
-                        file_path=molecule.crest_conformers_path,
-                        bucket_name=bucket_name,
-                        file_name=f"{molecule.name}/crest_conformers.xyz"
-                    )
+                # Verificar e criar o bucket se necessário
+                if not self.supabase_service.ensure_bucket_exists(bucket_name):
+                    logging.error(f"Não foi possível garantir a existência do bucket '{bucket_name}'. Upload de arquivos cancelado.")
+                else:
+                    # Agora que o bucket existe, tenta fazer o upload dos arquivos
+                    if molecule.crest_best_path and Path(molecule.crest_best_path).exists():
+                        best_conformer_url = self.supabase_service.upload_file(
+                            file_path=molecule.crest_best_path,
+                            bucket_name=bucket_name,
+                            file_name=f"{molecule.name}/crest_best.xyz"
+                        )
+                        
+                    if molecule.crest_conformers_path and Path(molecule.crest_conformers_path).exists():
+                        all_conformers_url = self.supabase_service.upload_file(
+                            file_path=molecule.crest_conformers_path,
+                            bucket_name=bucket_name,
+                            file_name=f"{molecule.name}/crest_conformers.xyz"
+                        )
             
             # Preparar resultados do CREST com caminhos locais ou URLs
             crest_results = {
@@ -811,11 +816,13 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
             
             if self.settings.supabase.storage_enabled and molecule.path_to_mopac_out and molecule.path_to_mopac_out.exists():
                 bucket_name = self.settings.supabase.molecules_bucket
-                mopac_output_url = self.supabase_service.upload_file(
-                    file_path=molecule.path_to_mopac_out,
-                    bucket_name=bucket_name,
-                    file_name=f"{molecule.name}/mopac.out"
-                )
+                # O bucket já deve existir neste ponto, mas verificamos novamente por segurança
+                if self.supabase_service.ensure_bucket_exists(bucket_name):
+                    mopac_output_url = self.supabase_service.upload_file(
+                        file_path=molecule.path_to_mopac_out,
+                        bucket_name=bucket_name,
+                        file_name=f"{molecule.name}/mopac.out"
+                    )
             
             # Enviar resultados MOPAC
             mopac_params = {

@@ -38,6 +38,46 @@ class SupabaseService:
             logging.error(f"Erro ao conectar com o Supabase: {e}")
             self.enabled = False
     
+    def ensure_bucket_exists(self, bucket_name: str) -> bool:
+        """
+        Verifica se o bucket existe e cria-o se não existir.
+        
+        Args:
+            bucket_name: Nome do bucket a ser verificado/criado
+            
+        Returns:
+            True se o bucket existe ou foi criado com sucesso, False caso contrário
+        """
+        if not self.enabled:
+            logging.warning("Serviço Supabase desativado. Não é possível verificar ou criar bucket.")
+            return False
+            
+        try:
+            # Verifica se o bucket existe
+            try:
+                self.supabase.storage.get_bucket(bucket_name)
+                logging.info(f"Bucket '{bucket_name}' já existe.")
+                return True
+            except Exception as e:
+                if "Bucket not found" in str(e):
+                    logging.info(f"Bucket '{bucket_name}' não existe. Tentando criar...")
+                    # Cria o bucket
+                    try:
+                        self.supabase.storage.create_bucket(bucket_name, options={
+                            'public': True  # Define o bucket como público para facilitar o acesso
+                        })
+                        logging.info(f"Bucket '{bucket_name}' criado com sucesso.")
+                        return True
+                    except Exception as create_error:
+                        logging.error(f"Erro ao criar bucket '{bucket_name}': {create_error}")
+                        return False
+                else:
+                    logging.error(f"Erro ao verificar bucket '{bucket_name}': {e}")
+                    return False
+        except Exception as e:
+            logging.error(f"Erro ao gerenciar bucket '{bucket_name}': {e}")
+            return False
+    
     def upload_molecule(self, molecule: Molecule) -> Optional[str]:
         """
         Envia dados da molécula para o Supabase.
@@ -185,6 +225,11 @@ class SupabaseService:
         if not self.enabled:
             logging.warning("Serviço Supabase desativado. Não é possível fazer upload do arquivo.")
             return None
+        
+        # Verifica e cria o bucket se necessário
+        if not self.ensure_bucket_exists(bucket_name):
+            logging.error(f"Não foi possível garantir a existência do bucket '{bucket_name}'. Upload cancelado.")
+            return None
             
         try:
             file_path = Path(file_path)
@@ -202,7 +247,8 @@ class SupabaseService:
             result = self.supabase.storage.from_(bucket_name).upload(
                 path=file_name,
                 file=file_contents,
-                file_options={"content-type": "application/octet-stream"}
+                file_options={"content-type": "application/octet-stream"},
+                file_options_override=True  # Sobrescreve se o arquivo já existir
             )
             
             # Obtém a URL pública

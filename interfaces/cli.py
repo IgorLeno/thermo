@@ -595,10 +595,14 @@ class CommandLineInterface:
                 count = response.count
                 print(f"Conexão bem-sucedida! {count} molécula(s) encontrada(s) no banco de dados.")
                 
-                # Testa o Storage se estiver habilitado
+                # Testa o Storage se estiver habilitado e verifica/cria o bucket
                 if self.settings.supabase.storage_enabled:
-                    storage_test = self.supabase_service.supabase.storage.get_bucket(self.settings.supabase.molecules_bucket)
-                    print(f"Conexão com o Storage bem-sucedida! Bucket '{self.settings.supabase.molecules_bucket}' está acessível.")
+                    bucket_name = self.settings.supabase.molecules_bucket
+                    if self.supabase_service.ensure_bucket_exists(bucket_name):
+                        print(f"Conexão com o Storage bem-sucedida! Bucket '{bucket_name}' está acessível.")
+                    else:
+                        print(f"Aviso: Não foi possível verificar ou criar o bucket '{bucket_name}'.")
+                        print(f"Verifique suas permissões e se a chave API tem acesso para criar buckets.")
             except Exception as e:
                 print(f"Erro ao acessar o banco de dados: {e}")
                 

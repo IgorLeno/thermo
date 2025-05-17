@@ -1,0 +1,76 @@
+# Arquivos e diretórios Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Ambientes virtuais
+venv/
+ENV/
+.env
+
+# Logs e arquivos temporários
+logs/
+*.log
+*.tmp
+*.temp
+
+# Arquivos específicos do projeto
+repository/sdf/
+repository/xyz/
+repository/crest/
+repository/pdb/
+repository/mopac/
+final_molecules/
+.coverage
+htmlcov/
+
+# Arquivos de resultados de cálculos
+*.out
+*.arc
+*.den
+*.ump
+*.got
+*.dat
+
+# Arquivos gerados pelo CREST
+*.energies
+*.xyz
+.crest_configurations
+.crest_best
+
+# Arquivos específicos de IDE/editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos de configuração contendo chaves
+config.local.yaml
+
+# Diretório de instalação de programas
+programs/crest/crest-master.zip
+programs/crest/crest-master/
