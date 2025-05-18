@@ -37,7 +37,7 @@ class ConformerAnalyzer:
                 energy_file = OUTPUT_DIR / molecule_name / CREST_ENERGIES_FILE
                 
             if not energy_file.exists():
-                logging.warning(f"Arquivo de energias não encontrado para {molecule_name}: {energy_file}")
+                # Suprime warning para não poluir a saída
                 return None
             
             # Lê as energias do arquivo
@@ -54,7 +54,6 @@ class ConformerAnalyzer:
                             continue
             
             if not energies:
-                logging.warning(f"Nenhuma energia encontrada no arquivo {energy_file}")
                 return None
             
             # Converte para array numpy para facilitar os cálculos
@@ -81,7 +80,129 @@ class ConformerAnalyzer:
             }
         
         except Exception as e:
-            logging.error(f"Erro ao analisar energias dos confôrmeros para {molecule_name}: {e}")
+            logging.debug(f"Erro ao analisar energias dos confôrmeros para {molecule_name}: {e}")
+            return None
+    
+    def get_best_conformer_energy(self, molecule_name: str) -> Optional[float]:
+        """
+        Extrai a energia do melhor confôrmero do arquivo crest_best.xyz.
+        
+        Args:
+            molecule_name: Nome da molécula a ser analisada.
+            
+        Returns:
+            A energia do melhor confôrmero ou None se não for encontrada.
+        """
+        try:
+            # CORREÇÃO: Busca primeiro no diretório CREST (repository/crest)
+            best_file = CREST_DIR / molecule_name / "crest_best.xyz"
+            
+            # Se não encontrar no repository/crest, tenta em final_molecules
+            if not best_file.exists():
+                best_file = OUTPUT_DIR / molecule_name / "crest_best.xyz"
+                
+            if not best_file.exists():
+                # Suprime warning para não poluir a saída
+                return None
+            
+            with open(best_file, 'r') as f:
+                lines = f.readlines()
+                
+            # O arquivo crest_best.xyz tem o formato XYZ
+            # A segunda linha pode conter a energia
+            if len(lines) >= 2:
+                comment_line = lines[1].strip()
+                # A linha de comentário pode conter a energia no formato: "energy: -17.72299717"
+                # ou apenas o valor da energia
+                try:
+                    # Tenta extrair energia da linha de comentário
+                    if "energy:" in comment_line.lower():
+                        energy_str = comment_line.split("energy:")[-1].strip()
+                        energy = float(energy_str)
+                    else:
+                        # Se não tem "energy:", tenta converter a linha diretamente
+                        energy = float(comment_line)
+                    
+                    return energy
+                
+                except (ValueError, IndexError):
+                    # Se não conseguir extrair da linha de comentário, tenta outros métodos
+                    pass
+            
+            # Se não conseguiu extrair da linha de comentário, busca no arquivo de energias
+            energy_data = self.get_conformer_energies(molecule_name)
+            if energy_data and 'energies' in energy_data:
+                # O primeiro confôrmero é o de menor energia
+                return energy_data['energies'][0]
+            
+            return None
+        
+        except Exception as e:
+            logging.debug(f"Erro ao extrair energia do melhor confôrmero para {molecule_name}: {e}")
+            return None
+    
+    def get_heat_of_formation(self, molecule_name: str) -> Optional[float]:
+        """
+        Extrai a entalpia de formação (heat of formation) do arquivo MOPAC .out em kJ/mol.
+        
+        Args:
+            molecule_name: Nome da molécula a ser analisada.
+            
+        Returns:
+            A entalpia de formação em kJ/mol ou None se não for encontrada.
+        """
+        try:
+            # Busca primeiro no diretório MOPAC (repository/mopac)
+            from config.constants import MOPAC_DIR
+            mopac_file = MOPAC_DIR / molecule_name / f"{molecule_name}.out"
+            
+            # Se não encontrar no repository/mopac, tenta em final_molecules
+            if not mopac_file.exists():
+                mopac_file = OUTPUT_DIR / molecule_name / f"{molecule_name}.out"
+                
+            if not mopac_file.exists():
+                # Suprime warning para não poluir a saída
+                return None
+            
+            # Lê o arquivo MOPAC e procura por heat of formation
+            with open(mopac_file, 'r') as f:
+                content = f.read()
+            
+            # Procura por diferentes padrões de heat of formation
+            import re
+            
+            # Padrão típico: "HEAT OF FORMATION = -234.567 KCAL/MOL"
+            pattern1 = r"HEAT OF FORMATION\s+=\s+(-?\d+\.?\d*)\s+KCAL/MOL"
+            match = re.search(pattern1, content, re.IGNORECASE)
+            
+            if match:
+                heat_of_formation_kcal = float(match.group(1))
+                # Converte de kcal/mol para kJ/mol (1 kcal = 4.184 kJ)
+                heat_of_formation_kj = heat_of_formation_kcal * 4.184
+                return heat_of_formation_kj
+            
+            # Padrão alternativo: "FINAL HEAT OF FORMATION = -234.567 KCAL/MOL"
+            pattern2 = r"FINAL HEAT OF FORMATION\s+=\s+(-?\d+\.?\d*)\s+KCAL/MOL"
+            match = re.search(pattern2, content, re.IGNORECASE)
+            
+            if match:
+                heat_of_formation_kcal = float(match.group(1))
+                heat_of_formation_kj = heat_of_formation_kcal * 4.184
+                return heat_of_formation_kj
+                
+            # Padrão mais geral para capturar qualquer linha com heat of formation
+            pattern3 = r".*HEAT.*FORMATION.*=\s+(-?\d+\.?\d*)\s+KCAL"
+            match = re.search(pattern3, content, re.IGNORECASE)
+            
+            if match:
+                heat_of_formation_kcal = float(match.group(1))
+                heat_of_formation_kj = heat_of_formation_kcal * 4.184
+                return heat_of_formation_kj
+            
+            return None
+        
+        except Exception as e:
+            logging.debug(f"Erro ao extrair heat of formation para {molecule_name}: {e}")
             return None
     
     def count_atoms(self, molecule_name: str) -> Optional[Dict]:
@@ -103,7 +224,7 @@ class ConformerAnalyzer:
                 conformer_file = OUTPUT_DIR / molecule_name / CREST_CONFORMERS_FILE
                 
             if not conformer_file.exists():
-                logging.warning(f"Arquivo de confôrmeros não encontrado para {molecule_name}: {conformer_file}")
+                # Não gera log warning para evitar poluir a saída
                 return None
             
             atom_counts = {}
@@ -142,7 +263,7 @@ class ConformerAnalyzer:
                         i += 1
             
             if not atom_counts:
-                logging.warning(f"Não foi possível extrair informações de átomos para {molecule_name}")
+                # Não gera log warning para evitar poluir a saída
                 return None
             
             return {
@@ -151,7 +272,8 @@ class ConformerAnalyzer:
             }
         
         except Exception as e:
-            logging.error(f"Erro ao analisar átomos dos confôrmeros para {molecule_name}: {e}")
+            # Apenas loga o erro em modo debug, sem warning
+            logging.debug(f"Erro ao analisar átomos dos confôrmeros para {molecule_name}: {e}")
             return None
     
     def get_conformer_statistics(self, molecule_name: str) -> Dict:

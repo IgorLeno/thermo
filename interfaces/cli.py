@@ -439,22 +439,73 @@ class CommandLineInterface:
             
             # Verifica se há resultados de execuções anteriores
             try:
+                # CORREÇÃO: Verifica ambos os diretórios (repository e final_molecules)
+                repository_crest_dir = CREST_DIR
+                repository_mopac_dir = MOPAC_DIR
                 output_dir = OUTPUT_DIR
+                
+                # Combina moléculas de ambos os diretórios
+                molecule_names = set()
+                
+                # Verifica repository/crest
+                if repository_crest_dir.exists():
+                    for d in repository_crest_dir.iterdir():
+                        if d.is_dir():
+                            molecule_names.add(d.name)
+                
+                # Verifica final_molecules/output
                 if output_dir.exists():
-                    previous_results = [d for d in output_dir.iterdir() if d.is_dir()]
-                    if previous_results:
-                        print(f"\nResultados de execuções anteriores encontrados: {len(previous_results)} molécula(s)")
-                        print("\nMoléculas com resultados salvos:")
-                        for result_dir in previous_results:
-                            has_conformers = (result_dir / CREST_CONFORMERS_FILE).exists()
-                            has_best = (result_dir / CREST_BEST_FILE).exists()
-                            status = "Completo" if has_conformers and has_best else "Incompleto"
-                            print(f"  - {result_dir.name}: {status}")
+                    for d in output_dir.iterdir():
+                        if d.is_dir():
+                            molecule_names.add(d.name)
+                
+                if molecule_names:
+                    print(f"\nResultados de execuções anteriores encontrados: {len(molecule_names)} molécula(s)")
+                    print("\nMoléculas com resultados salvos:")
+                    
+                    for mol_name in sorted(molecule_names):
+                        # Verifica status nos diretórios repository
+                        crest_dir = repository_crest_dir / mol_name
+                        mopac_dir = repository_mopac_dir / mol_name
                         
-                        # Oferece opção para gerar resumo
-                        if input("\nDeseja gerar um arquivo de resumo para estes resultados? (s/n): ").lower() == "s":
-                            self._generate_summary_for_existing_results(previous_results)
-                            return
+                        has_crest_best = (crest_dir / CREST_BEST_FILE).exists()
+                        has_conformers = (crest_dir / CREST_CONFORMERS_FILE).exists()
+                        has_mopac_out = (mopac_dir / f"{mol_name}.out").exists()
+                        
+                        # Se não encontrar na repository, verifica em final_molecules
+                        if not has_crest_best or not has_conformers or not has_mopac_out:
+                            final_dir = output_dir / mol_name
+                            if final_dir.exists():
+                                if not has_crest_best:
+                                    has_crest_best = (final_dir / CREST_BEST_FILE).exists()
+                                if not has_conformers:
+                                    has_conformers = (final_dir / CREST_CONFORMERS_FILE).exists()
+                                if not has_mopac_out:
+                                    has_mopac_out = (final_dir / f"{mol_name}.out").exists()
+                        
+                        # Determina o status
+                        if has_crest_best and has_conformers and has_mopac_out:
+                            status = "Completo"
+                        elif has_crest_best and has_conformers:
+                            status = "CREST OK"
+                        else:
+                            status = "Incompleto"
+                        
+                        print(f"  - {mol_name}: {status}")
+                    
+                    # Oferece opção para gerar resumo
+                    if input("\nDeseja gerar um arquivo de resumo para estes resultados? (s/n): ").lower() == "s":
+                        # Cria uma lista de Path objects para compatibilidade
+                        result_dirs = []
+                        for mol_name in molecule_names:
+                            # Prioriza repository, mas se não existir, usa final_molecules
+                            if (repository_crest_dir / mol_name).exists():
+                                result_dirs.append(repository_crest_dir / mol_name)
+                            elif (output_dir / mol_name).exists():
+                                result_dirs.append(output_dir / mol_name)
+                        
+                        self._generate_summary_for_existing_results(result_dirs)
+                        return
             except Exception as e:
                 logging.error(f"Erro ao verificar resultados anteriores: {e}")
             

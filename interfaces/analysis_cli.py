@@ -133,29 +133,42 @@ class AnalysisInterface:
     
     def _list_all_molecules(self):
         """Lista todas as moléculas com resultados de busca conformacional."""
-        if not OUTPUT_DIR.exists():
-            print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
-            return
+        # Temporariamente suprimir warnings para não poluir a saída da tabela
+        import logging
+        original_level = logging.root.level
+        logging.root.setLevel(logging.ERROR)
         
-        molecule_dirs = [d for d in OUTPUT_DIR.iterdir() if d.is_dir()]
-        
-        if not molecule_dirs:
-            print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
-            return
-        
-        print(f"\nEncontradas {len(molecule_dirs)} moléculas com resultados:")
-        print(f"{'Nome':<20} {'Confôrmeros':<15} {'Energia Máx.':<15} {'Átomos':<10}")
-        print("-" * 60)
-        
-        for molecule_dir in molecule_dirs:
-            molecule_name = molecule_dir.name
-            stats = self.conformer_analyzer.get_conformer_statistics(molecule_name)
+        try:
+            # Análise todas as moléculas disponíveis
+            molecules = self.conformer_analyzer.analyze_all_molecules()
             
-            num_conformers = stats.get('num_conformers', 'N/A') if stats and stats.get('success', False) else 'N/A'
-            max_energy = f"{max(stats['relative_energies']):.2f}" if stats and 'relative_energies' in stats and stats['relative_energies'] else 'N/A'
-            total_atoms = stats.get('total_atoms', 'N/A') if stats else 'N/A'
+            if not molecules:
+                print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
+                return
             
-            print(f"{molecule_name:<20} {num_conformers:<15} {max_energy:<15} {total_atoms:<10}")
+            print(f"\nEncontradas {len(molecules)} moléculas com resultados:")
+            print(f"{'Nome':<20} {'Confôrmeros':<15} {'Melhor Conf.':<15} {'Hf (kJ/mol)':<15}")
+            print("-" * 65)
+            
+            for stats in molecules:
+                molecule_name = stats['molecule_name']
+                
+                # Número de confôrmeros
+                num_conformers = stats.get('num_conformers', 'N/A') if stats.get('success', False) else 'N/A'
+                
+                # Energia do melhor confôrmero (menor energia)
+                best_energy = self.conformer_analyzer.get_best_conformer_energy(molecule_name)
+                best_energy_str = f"{best_energy:.2f}" if best_energy is not None else 'N/A'
+                
+                # Heat of formation em kJ/mol
+                heat_of_formation = self.conformer_analyzer.get_heat_of_formation(molecule_name)
+                hf_str = f"{heat_of_formation:.2f}" if heat_of_formation is not None else 'N/A'
+                
+                print(f"{molecule_name:<20} {num_conformers:<15} {best_energy_str:<15} {hf_str:<15}")
+                
+        finally:
+            # Restaura o nível de logging original
+            logging.root.setLevel(original_level)
     
     def _generate_full_report(self):
         """Gera um relatório completo de análise para todas as moléculas."""
