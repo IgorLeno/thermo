@@ -1,0 +1,142 @@
+
+Prompt para Agente de Código: Criação de Site Interativo sobre Métodos Híbridos para Cálculo de Propriedades Moleculares
+
+Objetivo Principal:
+Construir um website interativo, educacional e informativo sobre o tema "Métodos Híbridos para Cálculo de Propriedades Moleculares". O site deve ser visualmente atraente, de fácil navegação e rico em conteúdo técnico preciso, destinado a estudantes, pesquisadores e profissionais da área de química computacional e ciência de materiais.
+
+Material de Apoio Fornecido:
+
+Resumos de 10 artigos científicos (Artigo 1 a 10).
+
+Texto sobre bancos de dados relevantes (banco-dados.txt).
+
+Conteúdo OCR de artigos (Dobbelaere et al., TensorNet, ViSNet).
+
+Instrução: Utilize este material como base fundamental para o conteúdo das seções "Artigos Relevantes" e "Bancos de Dados". Além disso, extraia conceitos e evoluções para as demais seções. Os artigos OCR podem fornecer detalhes adicionais para enriquecer as explicações.
+
+Estrutura do Website e Conteúdo Detalhado:
+
+1. Página Inicial (Home)
+* Título: Métodos Híbridos em Química Computacional: Uma Exploração Interativa.
+* Introdução: Breve parágrafo explicando o que são métodos híbridos (combinando, por exemplo, mecânica quântica (QM) com machine learning (ML), ou diferentes níveis de teoria QM) para cálculo de propriedades moleculares e a importância do tema.
+* Destaques: Links rápidos para as principais seções (Artigos, Evolução, Implementação, Bancos de Dados).
+* Visual: Uma imagem ou animação representativa (ex: molécula com grafo sobreposto, diagrama de fluxo de método híbrido).
+
+2. O Que São Métodos Híbridos? (Conceitos Fundamentais)
+* Definição: Explicação detalhada do conceito de "métodos híbridos" no contexto de propriedades moleculares.
+* Exemplos: QM/MM, ML-DFT, GNNs para prever propriedades DFT, modelos de difusão para geração molecular informados por princípios físicos.
+* Por que são necessários? Vantagens em relação a métodos puramente clássicos ou puramente quânticos de alto custo (velocidade, escalabilidade, precisão).
+* Principais Propriedades Moleculares Alvo: Listar propriedades como entalpia de formação/reação, energias de ligação, polarizabilidade, gaps HOMO-LUMO, etc. Mencionar a relevância da entalpia, conforme destacado nos resumos dos artigos.
+* Desafios: Dificuldades comuns na área (ex: transferência entre domínios químicos, necessidade de dados de alta qualidade).
+
+3. Artigos Relevantes (Pesquisa e Inovação)
+* Introdução à Seção: Explique que esta seção apresentará artigos seminais e recentes, destacando suas contribuições.
+* Instrução para o Agente:
+* Utilize os 10 resumos fornecidos como ponto de partida principal. Para cada um dos 10 artigos:
+* Crie uma subseção dedicada.
+* Apresente o "Resumo Didático" fornecido.
+* Incorpore a análise "Relação com Entalpia de Formação ou Entalpia de Reação" fornecida.
+* Extraia dos "Destaques Relevantes" e "Observações Críticas" do material de apoio:
+* Principais inovações e contribuições.
+* Pontos fortes.
+* Limitações metodológicas ou desafios apontados.
+* Como o artigo se encaixa na evolução dos métodos (referenciar a seção "Linha Evolutiva").
+* Link para o paper original (se disponível publicamente ou DOI).
+* Busca Adicional: Realize uma busca na internet por 3-5 artigos adicionais altamente citados ou muito recentes (últimos 2-3 anos) sobre métodos híbridos para propriedades moleculares, especialmente os que combinam ML com física/química. Para cada novo artigo encontrado:
+* Forneça um resumo conciso (similar ao "Resumo Didático").
+* Descreva suas principais contribuições e inovações.
+* Discuta sua relevância para o campo.
+* Link para o paper original.
+* Interatividade:
+* Permitir filtrar artigos por palavras-chave (ex: GNN, equivariância, DFT, entalpia).
+* Ao clicar em um artigo, expandir para mostrar os detalhes.
+
+4. Linha Evolutiva dos Métodos
+* Introdução: Apresentar a progressão histórica e conceitual dos métodos híbridos.
+* Conteúdo:
+* Basear-se na seção "Evolução das Representações Moleculares" e "Tendências Temporais" do arquivo Comparações e Complementaridades entre os Artigos.md.
+* Descrever marcos importantes:
+* Primeiras abordagens QM/MM.
+* Introdução de ML para acelerar cálculos QM.
+* Ascensão das GNNs e a importância da representação molecular.
+* O papel da equivariância/invariância (E(3), SE(3)).
+* Modelos generativos (como os de difusão).
+* Incorporação de mais física nos modelos de ML.
+* Conectar os artigos da seção anterior a esta linha evolutiva.
+* Interatividade:
+* Um diagrama de linha do tempo visual e interativo. Clicar em um ponto da timeline poderia destacar artigos relevantes ou conceitos.
+
+5. Implementando Métodos Híbridos (Guia Prático)
+* Aviso: Deixar claro que esta seção oferece uma visão geral e conceitual, não um tutorial de codificação exaustivo.
+* Passos Gerais (Exemplo para um método ML-QM):
+1. Definição do Problema: Qual propriedade? Qual tipo de molécula?
+2. Coleta/Geração de Dados: Importância de bancos de dados (referenciar seção de Bancos de Dados) ou geração de dados QM (ex: DFT).
+3. Escolha da Representação Molecular: Grafos 2D, SMILES, descritores 3D, etc. (Conectar com discussões nos artigos, ex: Artigo 4, Uni-Mol).
+4. Escolha do Modelo de ML: GNNs (SchNet, MEGNet, EGNN), Kernel Methods, Redes de Difusão (EDM), etc.
+5. Treinamento e Validação: Considerações sobre divisão de dados (scaffold split vs random split - como no Artigo 4), métricas de avaliação.
+6. Incorporação de Conhecimento Físico/Químico: Equivariância, leis de conservação, etc.
+* Exemplos de Ferramentas/Bibliotecas: Mencionar bibliotecas populares (ex: PyTorch Geometric, DeepChem, ASE, SchNetPack, TorchMD-NET) que podem ser usadas.
+* Desafios na Implementação: Custo computacional, necessidade de expertise, interpretabilidade.
+
+6. Prós e Contras dos Métodos
+* Introdução: Cada abordagem tem suas vantagens e desvantagens.
+* Formato: Tabela comparativa ou subseções para diferentes classes de métodos (ex: GNNs equivariantes, Modelos de Difusão, Potenciais ML clássicos).
+* Critérios de Comparação:
+* Precisão (para diferentes propriedades/sistemas)
+* Custo Computacional (treinamento e inferência)
+* Escalabilidade (tamanho da molécula, tamanho do dataset)
+* Interpretabilidade
+* Facilidade de implementação
+* Necessidade de dados
+* Capacidade de generalização
+* Fonte: Extrair informações das "Observações Críticas" e dos próprios resumos dos artigos.
+
+7. Bancos de Dados Relevantes
+* Introdução: A importância de dados de alta qualidade para treinar modelos híbridos.
+* Instrução para o Agente:
+* Utilizar o conteúdo do arquivo banco-dados.txt (especialmente a tabela e a discussão sobre OE62, QM9, PubChemQC, ISOL24).
+* Para cada banco de dados mencionado:
+* Nome e link (se disponível).
+* Breve descrição (tipo de moléculas, propriedades, método de cálculo QM).
+* Tamanho (nº de moléculas, nº de átomos).
+* Disponibilidade.
+* Busca Adicional: Pesquisar por 1-2 outros bancos de dados públicos relevantes para o treinamento de modelos híbridos, especialmente aqueles com moléculas maiores ou propriedades diversas.
+* Interatividade:
+* Tabela pesquisável e ordenável de bancos de dados.
+* Links diretos para os bancos de dados.
+
+8. Definições Técnicas Importantes (Glossário)
+* Introdução: Termos-chave para entender a área.
+* Termos a incluir (sugestões, adicionar mais se necessário):
+* Mecânica Quântica (QM)
+* Teoria do Funcional da Densidade (DFT)
+* Machine Learning (ML)
+* Redes Neurais de Grafos (GNNs)
+* Passagem de Mensagens (Message Passing)
+* Equivariância (E(n), SE(3)) e Invariância
+* Representação Molecular (1D, 2D, 3D)
+* Fingerprints Moleculares
+* Modelos de Difusão
+* Entalpia de Formação / Reação
+* Funções de Base (em QM)
+* Hamiltoniano
+* Superfície de Energia Potencial (PES)
+* Nível de Teoria (em QM)
+* Interatividade: Termos clicáveis no corpo do texto do site que levam à definição no glossário, ou pop-ups com a definição.
+
+Considerações Adicionais para o Agente:
+
+Tom e Estilo: O conteúdo deve ser técnico, mas didático e acessível a um público com formação em química ou ciência da computação.
+
+Design: Profissional, limpo, moderno, com boa legibilidade. Cores e fontes apropriadas para um tema científico.
+
+Tecnologias: (Se o agente tiver flexibilidade) Sugere-se o uso de um framework frontend moderno (React, Vue, Angular) ou um gerador de site estático (Hugo, Jekyll) com JavaScript para interatividade. Se for mais simples, HTML, CSS e JavaScript puro.
+
+Responsividade: O site deve ser responsivo e funcionar bem em desktops e dispositivos móveis.
+
+Navegação: Menu claro e intuitivo para acessar todas as seções.
+
+Pesquisa Interna: Se possível, implementar uma barra de busca para pesquisar conteúdo dentro do site.
+
+Entrega Esperada:
+Um conjunto de arquivos (HTML, CSS, JavaScript, imagens, etc.) que compõem o website funcional, ou o código-fonte em um formato de projeto de um framework específico. Incluir um README.md explicando como executar o site localmente.

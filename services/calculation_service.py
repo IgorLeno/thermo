@@ -540,29 +540,57 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
             logging.error(f"Erro durante a execução do MOPAC: {e}")
             return False
     
-    def _extract_mopac_enthalpy(self, mopac_output_file: Path) -> Optional[float]:
-        """Extrai a entalpia de formação do arquivo .out do MOPAC."""
+    def _extract_mopac_enthalpy(self, mopac_output_file: Path) -> tuple:
+        """
+        Extrai a entalpia de formação do arquivo .out do MOPAC em ambas as unidades.
+        
+        Args:
+            mopac_output_file: Caminho para o arquivo de saída .out do MOPAC
+            
+        Returns:
+            Uma tupla com (entalpia_kcal_mol, entalpia_kj_mol) ou (None, None) em caso de erro
+        """
         if not mopac_output_file or not mopac_output_file.exists():
             logging.error(f"Arquivo de saída do MOPAC '{mopac_output_file}' não encontrado para extração.")
-            return None
+            return None, None
         try:
             with open(mopac_output_file, 'r') as f:
                 content = f.read()
             
-            # Expressão regular para encontrar "FINAL HEAT OF FORMATION = xyz KCAL/MOL" ou "KJ/MOL"
-            # O valor pode ter sinal, ser decimal.
-            match = re.search(r"FINAL HEAT OF FORMATION\s*=\s*(-?\d+\.\d+)\s*(KCAL/MOL|KJ/MOL)", content, re.IGNORECASE)
+            # Expressão regular para capturar ambos os valores (kcal/mol e kJ/mol)
+            # FINAL HEAT OF FORMATION = -67.53047 KCAL/MOL = -282.54749 KJ/MOL
+            match = re.search(r"FINAL HEAT OF FORMATION\s*=\s*(-?\d+\.\d+)\s*KCAL/MOL\s*=\s*(-?\d+\.\d+)\s*KJ/MOL", 
+                            content, re.IGNORECASE)
+            
             if match:
-                enthalpy_value = float(match.group(1))
-                unit = match.group(2).upper()
-                logging.info(f"Entalpia de formação extraída do MOPAC: {enthalpy_value} {unit}")
-                return enthalpy_value
+                enthalpy_kcal = float(match.group(1))
+                enthalpy_kj = float(match.group(2))
+                logging.info(f"Entalpia de formação extraída do MOPAC: {enthalpy_kcal} kcal/mol, {enthalpy_kj} kJ/mol")
+                return enthalpy_kcal, enthalpy_kj
             else:
+                # Tentativa alternativa - procurar os valores separadamente
+                match_kcal = re.search(r"FINAL HEAT OF FORMATION\s*=\s*(-?\d+\.\d+)\s*KCAL/MOL", content, re.IGNORECASE)
+                match_kj = re.search(r"FINAL HEAT OF FORMATION\s*=\s*(-?\d+\.\d+)\s*KJ/MOL", content, re.IGNORECASE)
+                
+                if match_kcal:
+                    enthalpy_kcal = float(match_kcal.group(1))
+                    # Se apenas kcal/mol foi encontrado, calcule kJ/mol (1 kcal/mol = 4.184 kJ/mol)
+                    enthalpy_kj = enthalpy_kcal * 4.184
+                    logging.info(f"Entalpia de formação extraída do MOPAC (apenas kcal): {enthalpy_kcal} kcal/mol, calculado: {enthalpy_kj} kJ/mol")
+                    return enthalpy_kcal, enthalpy_kj
+                    
+                elif match_kj:
+                    enthalpy_kj = float(match_kj.group(1))
+                    # Se apenas kJ/mol foi encontrado, calcule kcal/mol (1 kJ/mol = 0.239 kcal/mol)
+                    enthalpy_kcal = enthalpy_kj * 0.239
+                    logging.info(f"Entalpia de formação extraída do MOPAC (apenas kJ): calculado: {enthalpy_kcal} kcal/mol, {enthalpy_kj} kJ/mol")
+                    return enthalpy_kcal, enthalpy_kj
+                
                 logging.warning(f"Não foi possível encontrar 'FINAL HEAT OF FORMATION' no arquivo {mopac_output_file}")
-                return None
+                return None, None
         except Exception as e:
             logging.error(f"Erro ao extrair entalpia do MOPAC: {e}")
-            return None
+            return None, None
 
     def _store_final_results(self):
         """Armazena os resultados finais (ex: entalpia) em final_molecules."""
@@ -573,8 +601,12 @@ ls -la '{output_dir_wsl}/' 2>/dev/null || echo "Diretório de saída vazio ou in
         with open(summary_file, 'w') as f:
             f.write(f"Molécula: {self.molecule_data.name}\n")
             f.write(f"Método de Entalpia: MOPAC ({self.mopac_keywords.split()[0] if self.mopac_keywords else 'N/A'})\n") # Ex: PM7
+            
+            # Inclui ambas as unidades de entalpia
             if self.molecule_data.enthalpy_formation_mopac is not None:
-                f.write(f"Entalpia de Formação: {self.molecule_data.enthalpy_formation_mopac} (unidade do MOPAC)\n")
+                f.write(f"Entalpia de Formação: {self.molecule_data.enthalpy_formation_mopac} kcal/mol\n")
+                if hasattr(self.molecule_data, 'enthalpy_formation_mopac_kj') and self.molecule_data.enthalpy_formation_mopac_kj is not None:
+                    f.write(f"Entalpia de Formação: {self.molecule_data.enthalpy_formation_mopac_kj} kJ/mol\n")
             else:
                 f.write("Entalpia de Formação: Não calculada ou erro.\n")
             

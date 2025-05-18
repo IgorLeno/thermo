@@ -1,0 +1,7 @@
+Resumo dos cálculos (execuções anteriores):
+
+Molécula        Status CREST Status MOPAC Entalpia             Diretório                               
+---------------------------------------------------------------------------------------------------
+butanol         Incompleto   Incompleto   -67.53047 (unidade do MOPAC) c:\Repositorio\TCC\grimme_thermo\final_molecules\output\butanol
+ethanol         Incompleto   Incompleto   -57.85803 kcal/mol   c:\Repositorio\TCC\grimme_thermo\final_molecules\output\ethanol
+propanol        Incompleto   Incompleto   -62.73536 (unidade do MOPAC) c:\Repositorio\TCC\grimme_thermo\final_molecules\output\propanol

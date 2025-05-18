@@ -21,10 +21,11 @@ class Molecule:
     mopac_input_dat_path: Optional[Path] = None  # Ex: repository/mopac/ethanol/ethanol.dat
     mopac_output_directory: Optional[Path] = None  # Ex: repository/mopac/ethanol/
     mopac_output_log_path: Optional[Path] = None  # Ex: repository/mopac/ethanol/ethanol.out
-    enthalpy_formation_mopac: Optional[float] = None
+    enthalpy_formation_mopac: Optional[float] = None  # Entalpia em kcal/mol
+    enthalpy_formation_mopac_kj: Optional[float] = None  # Entalpia em kJ/mol
 
     def __str__(self):
-        return f"Molecule(name={self.name}, cid={self.pubchem_cid})"
+        return f"Molecule(name={self.name})"
         
     @property
     def path_to_crest_best_xyz(self) -> Optional[Path]:
@@ -41,8 +42,16 @@ class Molecule:
         """Retorna o caminho para o arquivo .arc do MOPAC."""
         return self.mopac_output_directory / f"{self.name}.arc" if self.mopac_output_directory and self.name else None
         
-    def set_mopac_results(self, pdb_path: Path, dat_path: Path, output_dir: Path, enthalpy: Optional[float]):
-        """Define os resultados do cálculo MOPAC."""
+    def set_mopac_results(self, pdb_path: Path, dat_path: Path, output_dir: Path, enthalpy: tuple):
+        """
+        Define os resultados do cálculo MOPAC.
+        
+        Args:
+            pdb_path: Caminho para o arquivo PDB usado como entrada
+            dat_path: Caminho para o arquivo .dat gerado
+            output_dir: Diretório onde os arquivos de saída do MOPAC foram salvos
+            enthalpy: Tupla contendo (entalpia_kcal_mol, entalpia_kj_mol)
+        """
         self.converted_pdb_path = pdb_path
         self.mopac_input_dat_path = dat_path
         self.mopac_output_directory = output_dir
@@ -60,4 +69,10 @@ class Molecule:
         else:
             self.mopac_output_log_path = mopac_out_path
             
-        self.enthalpy_formation_mopac = enthalpy
+        # Armazena os dois valores de entalpia
+        if enthalpy and isinstance(enthalpy, tuple) and len(enthalpy) == 2:
+            self.enthalpy_formation_mopac = enthalpy[0]  # kcal/mol
+            self.enthalpy_formation_mopac_kj = enthalpy[1]  # kJ/mol
+        else:
+            self.enthalpy_formation_mopac = None
+            self.enthalpy_formation_mopac_kj = None

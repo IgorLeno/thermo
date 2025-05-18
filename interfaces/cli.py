@@ -25,7 +25,12 @@ class CommandLineInterface:
     def __init__(self, settings: Settings = None, file_service: FileService = None,
                  pubchem_service: PubChemService = None, conversion_service: ConversionService = None,
                  calculation_service: CalculationService = None):
-        self.settings = settings or Settings()
+        # Carrega configurações do arquivo se settings não foi fornecido
+        if settings is None:
+            self.settings = Settings()
+            self.settings.load_settings("config.yaml")
+        else:
+            self.settings = settings
         self.file_service = file_service or FileService()
         self.pubchem_service = pubchem_service or PubChemService()
         self.conversion_service = conversion_service or ConversionService(self.settings)
@@ -279,6 +284,13 @@ class CommandLineInterface:
             print(f"\nErro ao processar a molécula {molecule.name}. Veja o log para mais detalhes.")
             return False
 
+    def _save_settings_auto(self):
+        """Salva as configurações automaticamente."""
+        try:
+            self.settings.save_settings("config.yaml")
+        except Exception as e:
+            logging.warning(f"Não foi possível salvar configurações automaticamente: {e}")
+    
     def edit_settings(self):
         """
         Edita as configurações com base nos argumentos fornecidos.
@@ -319,6 +331,7 @@ class CommandLineInterface:
                     else:
                         self.settings.calculation_params.n_threads = threads
                         print(f"Número de threads atualizado para: {threads}")
+                        self._save_settings_auto()
                 except ValueError:
                     print("Por favor, digite um número inteiro válido.")
             elif choice == "2":
@@ -326,6 +339,7 @@ class CommandLineInterface:
                 if method in ["gfn1", "gfn2", "gfnff"]:
                     self.settings.calculation_params.crest_method = method
                     print(f"Método CREST atualizado para: {method}")
+                    self._save_settings_auto()
                 else:
                     print("Método inválido. Use gfn1, gfn2 ou gfnff.")
             elif choice == "3":
@@ -333,15 +347,18 @@ class CommandLineInterface:
                 if os.path.exists(path):
                     self.settings.openbabel_path = path
                     print(f"Caminho do OpenBabel atualizado.")
+                    self._save_settings_auto()
                 else:
                     print(f"Aviso: O caminho {path} não existe. Deseja continuar? (s/n)")
                     if input().lower() == 's':
                         self.settings.openbabel_path = path
                         print(f"Caminho do OpenBabel atualizado.")
+                        self._save_settings_auto()
             elif choice == "4":
                 path = input("Digite o novo caminho do CREST: ")
                 self.settings.crest_path = path
                 print(f"Caminho do CREST atualizado.")
+                self._save_settings_auto()
             elif choice == "5":
                 try:
                     temp = float(input("Digite a nova temperatura eletrônica (em Kelvin): "))
@@ -350,6 +367,7 @@ class CommandLineInterface:
                     else:
                         self.settings.calculation_params.electronic_temperature = temp
                         print(f"Temperatura eletrônica atualizada para: {temp} K")
+                        self._save_settings_auto()
                 except ValueError:
                     print("Por favor, digite um número válido.")
             elif choice == "6":
@@ -359,17 +377,20 @@ class CommandLineInterface:
                     print(f"Solvente atualizado para: {solvent}")
                 else:
                     print("Solvente removido (cálculo em fase gasosa).")
+                self._save_settings_auto()
             elif choice == "7":
                 keywords = input(f"Digite as novas palavras-chave do MOPAC (atual: {self.settings.mopac_keywords}): ")
                 if keywords.strip():
                     self.settings.mopac_keywords = keywords
                     print(f"Palavras-chave do MOPAC atualizadas para: {keywords}")
+                    self._save_settings_auto()
                 else:
                     print("Palavras-chave do MOPAC não foram alteradas.")
             elif choice == "8":
                 path = input("Digite o novo caminho do executável do MOPAC: ")
                 self.settings.mopac_executable_path = Path(path)
                 print(f"Caminho do MOPAC atualizado.")
+                self._save_settings_auto()
             elif choice == "9":
                 filepath = input("Digite o caminho para salvar o arquivo de configuração (padrão: config.yaml): ")
                 if not filepath:
@@ -380,11 +401,13 @@ class CommandLineInterface:
                 enable = input("Habilitar o Supabase? (s/n): ").lower()
                 self.settings.supabase.enabled = enable == "s"
                 print(f"Supabase {'habilitado' if self.settings.supabase.enabled else 'desabilitado'}.")
+                self._save_settings_auto()
             elif choice == "11":
                 url = input("Digite a URL da API do Supabase: ")
                 if url:
                     self.settings.supabase.url = url
                     print("URL da API atualizada.")
+                    self._save_settings_auto()
                 else:
                     print("URL não alterada.")
             elif choice == "12":
@@ -392,6 +415,7 @@ class CommandLineInterface:
                 if key:
                     self.settings.supabase.key = key
                     print("Chave da API atualizada.")
+                    self._save_settings_auto()
                 else:
                     print("Chave não alterada.")
             elif choice == "13":
@@ -402,6 +426,7 @@ class CommandLineInterface:
                     if bucket:
                         self.settings.supabase.molecules_bucket = bucket
                 print(f"Upload de arquivos {'habilitado' if self.settings.supabase.storage_enabled else 'desabilitado'}.")
+                self._save_settings_auto()
             elif choice == "0":
                 return
             else:
@@ -436,8 +461,8 @@ class CommandLineInterface:
             return
 
         print("\nResultados dos cálculos realizados nesta sessão:")
-        print(f"{'Molécula':<15} {'CID':<8} {'Status':<12} {'Entalpia (MOPAC)':<20}")
-        print("-" * 55)
+        print(f"{'Molécula':<20} {'Status':<12} {'Entalpia (MOPAC)':<20}")
+        print("-" * 52)
         
         for molecule in self.molecules:
             # Verifica se os arquivos existem nos diretórios corretos
@@ -462,7 +487,7 @@ class CommandLineInterface:
             # Verifica se há informação de entalpia
             entalpia = f"{molecule.enthalpy_formation_mopac}" if hasattr(molecule, 'enthalpy_formation_mopac') and molecule.enthalpy_formation_mopac is not None else "N/A"
             
-            print(f"{molecule.name:<15} {str(molecule.pubchem_cid):<8} {status:<12} {entalpia:<20}")
+            print(f"{molecule.name:<20} {status:<12} {entalpia:<20}")
 
         # Opção para gerar um arquivo de resumo
         if input("\nDeseja gerar um arquivo de resumo (s/n)? ").lower() == "s":
@@ -547,11 +572,16 @@ class CommandLineInterface:
             if bucket:
                 self.settings.supabase.molecules_bucket = bucket
         
-        # Salvar configurações
-        save = input("Salvar configurações? (s/n): ").lower()
-        if save == "s":
+        # Salvar configurações automaticamente se mudanças foram feitas
+        if any([
+            hasattr(self, '_config_changed') and self._config_changed,
+            enable,  # Se o usuário digitou algo
+            url,     # Se o usuário digitou algo
+            key,     # Se o usuário digitou algo
+            storage  # Se o usuário digitou algo
+        ]):
             self.settings.save_settings("config.yaml")
-            print("Configurações do Supabase salvas com sucesso.")
+            print("Configurações do Supabase salvas automaticamente.")
             
             # Reinicializa o serviço Supabase com as novas configurações
             try:
@@ -624,33 +654,47 @@ class CommandLineInterface:
         print("\nBuscando resultados existentes...")
         
         try:
+            # CORREÇÃO: Verificamos tanto o diretório final_molecules quanto repository
             output_dir = OUTPUT_DIR
-            if not output_dir.exists():
-                print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
-                return
-                
-            molecule_dirs = [d for d in output_dir.iterdir() if d.is_dir()]
+            repository_crest_dir = CREST_DIR
+            repository_mopac_dir = MOPAC_DIR
             
-            if not molecule_dirs:
+            if not output_dir.exists() and not repository_crest_dir.exists():
+                print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
+                return
+            
+            # Verificamos os diretórios em final_molecules/output
+            molecule_dirs_final = [d for d in output_dir.iterdir() if d.is_dir()] if output_dir.exists() else []
+            
+            # Verificamos os diretórios em repository/crest
+            molecule_dirs_crest = [Path(repository_crest_dir) / d.name for d in repository_crest_dir.iterdir() 
+                                 if d.is_dir()] if repository_crest_dir.exists() else []
+            
+            # Combinamos todas as moléculas encontradas (por nome)
+            molecule_names = set([d.name for d in molecule_dirs_final])
+            molecule_names.update([d.name for d in molecule_dirs_crest])
+            
+            if not molecule_names:
                 print("Nenhum resultado encontrado. Execute a busca conformacional primeiro.")
                 return
                 
-            print(f"Encontrados {len(molecule_dirs)} molécula(s) com resultados.")
+            molecule_names = sorted(list(molecule_names))
+            print(f"Encontrados {len(molecule_names)} molécula(s) com resultados.")
             print("\nMoléculas disponíveis para sincronização:")
             
-            for i, mol_dir in enumerate(molecule_dirs, 1):
-                print(f"{i}. {mol_dir.name}")
+            for i, mol_name in enumerate(molecule_names, 1):
+                print(f"{i}. {mol_name}")
             
             choice = input("\nSincronizar todas as moléculas (t) ou escolher quais sincronizar (e)? ")
             
             molecules_to_sync = []
             if choice.lower() == "t":
-                molecules_to_sync = [d.name for d in molecule_dirs]
+                molecules_to_sync = molecule_names
             elif choice.lower() == "e":
                 indices = input("Digite os números das moléculas a sincronizar, separados por vírgula: ")
                 try:
                     selected = [int(idx.strip()) - 1 for idx in indices.split(",")]
-                    molecules_to_sync = [molecule_dirs[idx].name for idx in selected if 0 <= idx < len(molecule_dirs)]
+                    molecules_to_sync = [molecule_names[idx] for idx in selected if 0 <= idx < len(molecule_names)]
                 except (ValueError, IndexError):
                     print("Seleção inválida.")
                     return
@@ -677,29 +721,82 @@ class CommandLineInterface:
                     # Criamos uma molécula temporária com os dados necessários
                     molecule = Molecule(name=mol_name)
                     
-                    # Configuramos os caminhos para os arquivos
-                    crest_dir = CREST_DIR / mol_name
-                    mopac_dir = MOPAC_DIR / mol_name
+                    # Configuramos os caminhos para os arquivos, verificando primeiro em repository
+                    crest_dir = Path(repository_crest_dir) / mol_name
+                    mopac_dir = Path(repository_mopac_dir) / mol_name
                     
-                    molecule.crest_best_path = str(crest_dir / CREST_BEST_FILE)
-                    molecule.crest_conformers_path = str(crest_dir / CREST_CONFORMERS_FILE)
+                    # Verificar se os arquivos existem
+                    crest_best_path = crest_dir / CREST_BEST_FILE
+                    crest_conformers_path = crest_dir / CREST_CONFORMERS_FILE
+                    crest_energies_path = crest_dir / CREST_ENERGIES_FILE
+                    
+                    if not crest_best_path.exists():
+                        # Tenta encontrar no diretório final_molecules
+                        alt_path = output_dir / mol_name / CREST_BEST_FILE
+                        if alt_path.exists():
+                            crest_best_path = alt_path
+                        else:
+                            logging.warning(f"Arquivo de conformer não encontrado para {mol_name}: {crest_best_path}")
+                    
+                    if not crest_conformers_path.exists():
+                        # Tenta encontrar no diretório final_molecules
+                        alt_path = output_dir / mol_name / CREST_CONFORMERS_FILE
+                        if alt_path.exists():
+                            crest_conformers_path = alt_path
+                        else:
+                            logging.warning(f"Arquivo de confôrmeros não encontrado para {mol_name}: {crest_conformers_path}")
+                    
+                    if not crest_energies_path.exists():
+                        # Tenta encontrar no diretório final_molecules
+                        alt_path = output_dir / mol_name / CREST_ENERGIES_FILE
+                        if alt_path.exists():
+                            crest_energies_path = alt_path
+                        else:
+                            logging.warning(f"Arquivo de energias não encontrado para {mol_name}: {crest_energies_path}")
+                    
+                    molecule.crest_best_path = str(crest_best_path)
+                    molecule.crest_conformers_path = str(crest_conformers_path)
                     
                     # Verificamos e extraímos a entalpia se disponível
                     mopac_out_file = mopac_dir / f"{mol_name}.out"
+                    if not mopac_out_file.exists():
+                        # Tenta encontrar no diretório final_molecules
+                        alt_path = output_dir / mol_name / f"{mol_name}.out"
+                        if alt_path.exists():
+                            mopac_out_file = alt_path
+                            print(f"Arquivo MOPAC alternativo encontrado em {alt_path}")
+                    
                     if mopac_out_file.exists():
                         # Use o método do CalculationService para extrair a entalpia
-                        enthalpy = self.calculation_service._extract_mopac_enthalpy(mopac_out_file)
+                        enthalpy, enthalpy_kj = self.calculation_service._extract_mopac_enthalpy(mopac_out_file)
                         if enthalpy is not None:
                             molecule.enthalpy_formation_mopac = enthalpy
+                            molecule.enthalpy_formation_mopac_kj = enthalpy_kj
+                            print(f"Entalpia extraída: {enthalpy} kcal/mol, {enthalpy_kj} kJ/mol")
+                        else:
+                            print(f"Não foi possível extrair a entalpia do arquivo {mopac_out_file}")
+                    else:
+                        print(f"Arquivo MOPAC não encontrado para {mol_name}")
                     
                     # Obtemos estatísticas dos confôrmeros
-                    conformer_stats = analyzer.get_conformer_statistics(mol_name)
+                    try:
+                        conformer_stats = analyzer.get_conformer_statistics(mol_name)
+                        if not conformer_stats or not conformer_stats.get("success", False):
+                            print(f"Não foi possível obter estatísticas de confôrmeros para {mol_name}")
+                    except Exception as e:
+                        print(f"Erro ao analisar confôrmeros: {e}")
+                        conformer_stats = {"success": False}
                     
                     # Upload para o Supabase
-                    molecule_id = self.supabase_service.upload_molecule(molecule)
-                    
-                    if not molecule_id:
-                        print(f"Erro ao enviar molécula {mol_name} para o Supabase.")
+                    try:
+                        molecule_id = self.supabase_service.upload_molecule(molecule)
+                        
+                        if not molecule_id:
+                            print(f"Erro ao enviar molécula {mol_name} para o Supabase.")
+                            failed += 1
+                            continue
+                    except Exception as e:
+                        print(f"Erro ao fazer upload da molécula: {e}")
                         failed += 1
                         continue
                     
@@ -713,8 +810,8 @@ class CommandLineInterface:
                     
                     crest_results = {
                         "num_conformers": conformer_stats.get("num_conformers") if conformer_stats and conformer_stats.get("success", False) else None,
-                        "best_conformer_path": molecule.crest_best_path,
-                        "all_conformers_path": molecule.crest_conformers_path
+                        "best_conformer_path": str(crest_best_path) if crest_best_path.exists() else None,
+                        "all_conformers_path": str(crest_conformers_path) if crest_conformers_path.exists() else None
                     }
                     
                     # Adiciona estatísticas do conformador se disponíveis
@@ -723,13 +820,17 @@ class CommandLineInterface:
                         crest_results["relative_energies"] = conformer_stats.get("relative_energies", [])
                         crest_results["populations"] = conformer_stats.get("populations", [])
                     
-                    crest_success = self.supabase_service.upload_calculation_results(
-                        molecule_id=molecule_id,
-                        calculation_type="crest",
-                        status="completed",
-                        parameters=crest_params,
-                        results=crest_results
-                    )
+                    try:
+                        crest_success = self.supabase_service.upload_calculation_results(
+                            molecule_id=molecule_id,
+                            calculation_type="crest",
+                            status="completed",
+                            parameters=crest_params,
+                            results=crest_results
+                        )
+                    except Exception as e:
+                        print(f"Erro ao fazer upload dos resultados CREST: {e}")
+                        crest_success = False
                     
                     # Upload de resultados MOPAC se disponíveis
                     mopac_success = True
@@ -740,17 +841,22 @@ class CommandLineInterface:
                         
                         mopac_results = {
                             "enthalpy_formation": molecule.enthalpy_formation_mopac,
+                            "enthalpy_formation_kj": getattr(molecule, 'enthalpy_formation_mopac_kj', None),
                             "method": self.settings.mopac_keywords.split()[0] if self.settings.mopac_keywords else None,
                             "output_path": str(mopac_out_file) if mopac_out_file.exists() else None
                         }
                         
-                        mopac_success = self.supabase_service.upload_calculation_results(
-                            molecule_id=molecule_id,
-                            calculation_type="mopac",
-                            status="completed",
-                            parameters=mopac_params,
-                            results=mopac_results
-                        )
+                        try:
+                            mopac_success = self.supabase_service.upload_calculation_results(
+                                molecule_id=molecule_id,
+                                calculation_type="mopac",
+                                status="completed",
+                                parameters=mopac_params,
+                                results=mopac_results
+                            )
+                        except Exception as e:
+                            print(f"Erro ao fazer upload dos resultados MOPAC: {e}")
+                            mopac_success = False
                     
                     if crest_success and mopac_success:
                         print(f"✓ {mol_name} sincronizado com sucesso!")
@@ -761,13 +867,16 @@ class CommandLineInterface:
                         
                 except Exception as e:
                     print(f"✗ Erro ao sincronizar {mol_name}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     failed += 1
             
             print(f"\nSincronização concluída: {successful} sucesso(s), {failed} falha(s).")
             
         except Exception as e:
             print(f"Erro durante a sincronização: {e}")
-    
+            import traceback
+            traceback.print_exc()    
     def _open_dashboard(self):
         """Abre o dashboard Supabase no navegador."""
         if not self.settings.supabase.enabled:

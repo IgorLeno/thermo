@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from core.molecule import Molecule
-from config.constants import OUTPUT_DIR, CREST_ENERGIES_FILE, CREST_CONFORMERS_FILE
+from config.constants import OUTPUT_DIR, CREST_DIR, CREST_ENERGIES_FILE, CREST_CONFORMERS_FILE
 
 class ConformerAnalyzer:
     """
@@ -29,8 +29,13 @@ class ConformerAnalyzer:
             O dicionário inclui: 'energies', 'relative_energies', 'boltzmann_weights' e 'populations'.
         """
         try:
-            energy_file = OUTPUT_DIR / molecule_name / CREST_ENERGIES_FILE
+            # CORREÇÃO: Busca primeiro no diretório CREST (repository/crest)
+            energy_file = CREST_DIR / molecule_name / CREST_ENERGIES_FILE
             
+            # Se não encontrar no repository/crest, tenta em final_molecules
+            if not energy_file.exists():
+                energy_file = OUTPUT_DIR / molecule_name / CREST_ENERGIES_FILE
+                
             if not energy_file.exists():
                 logging.warning(f"Arquivo de energias não encontrado para {molecule_name}: {energy_file}")
                 return None
@@ -90,8 +95,13 @@ class ConformerAnalyzer:
             Um dicionário com a contagem de cada tipo de átomo ou None se o arquivo não for encontrado.
         """
         try:
-            conformer_file = OUTPUT_DIR / molecule_name / CREST_CONFORMERS_FILE
+            # CORREÇÃO: Busca primeiro no diretório CREST (repository/crest)
+            conformer_file = CREST_DIR / molecule_name / CREST_CONFORMERS_FILE
             
+            # Se não encontrar no repository/crest, tenta em final_molecules
+            if not conformer_file.exists():
+                conformer_file = OUTPUT_DIR / molecule_name / CREST_CONFORMERS_FILE
+                
             if not conformer_file.exists():
                 logging.warning(f"Arquivo de confôrmeros não encontrado para {molecule_name}: {conformer_file}")
                 return None
@@ -224,13 +234,25 @@ class ConformerAnalyzer:
         results = []
         
         try:
-            if OUTPUT_DIR.exists():
-                molecule_dirs = [d for d in OUTPUT_DIR.iterdir() if d.is_dir()]
+            # CORREÇÃO: Verifica primeiro em CREST_DIR
+            if CREST_DIR.exists():
+                molecule_dirs = [d for d in CREST_DIR.iterdir() if d.is_dir()]
                 
                 for molecule_dir in molecule_dirs:
                     molecule_name = molecule_dir.name
                     stats = self.get_conformer_statistics(molecule_name)
                     results.append(stats)
+            
+            # Também verifica em OUTPUT_DIR para resultados antigos
+            if OUTPUT_DIR.exists():
+                molecule_dirs = [d for d in OUTPUT_DIR.iterdir() if d.is_dir()]
+                
+                for molecule_dir in molecule_dirs:
+                    molecule_name = molecule_dir.name
+                    # Só adiciona se ainda não foi analisado
+                    if not any(r['molecule_name'] == molecule_name for r in results):
+                        stats = self.get_conformer_statistics(molecule_name)
+                        results.append(stats)
             
             return results
         

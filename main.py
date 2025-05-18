@@ -5,6 +5,7 @@ from services.file_service import FileService
 from services.pubchem_service import PubChemService
 from services.conversion_service import ConversionService
 from services.calculation_service import CalculationService
+from utils.logging_config import setup_application_logging, get_logging_manager
 import logging
 import os
 from pathlib import Path
@@ -23,25 +24,20 @@ def main():
     """
     Função principal do programa conformer_search.
     """
-    # Cria diretório de logs se não existir
-    log_dir = 'logs'
-    os.makedirs(log_dir, exist_ok=True)
+    # Configura o sistema de logging centralizado
+    setup_application_logging()
     
-    # Nome do arquivo de log com timestamp
-    log_filename = f'logs/conformer_search_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+    # Obtém o gerenciador de logging para acessar informações
+    logging_manager = get_logging_manager()
+    log_filename = logging_manager.get_log_filename()
     
-    # Configuração do logging com nível mais detalhado e exibindo no console também
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(module)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_filename),
-            logging.StreamHandler()  # Adiciona saída para o console
-        ]
-    )
-
     logging.info("=== Iniciando o programa de busca conformacional e cálculo de entalpia ===")
-    logging.info(f"Log sendo salvo em: {log_filename}")
+    logging.info(f"Log detalhado sendo salvo em: {log_filename}")
+    
+    # Exibe uma mensagem mais limpa no console
+    print("=== Grimme Thermo - Sistema de Busca Conformacional ===")
+    print(f"Log detalhado: {log_filename}")
+    print("=" * 55)
 
     # Configura os diretórios necessários
     setup_directories()

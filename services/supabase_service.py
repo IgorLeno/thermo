@@ -192,12 +192,52 @@ class SupabaseService:
                 logging.info(f"Molécula '{molecule.name}' já existe no Supabase com ID: {molecule_id}")
                 return molecule_id
             
-            # Prepara os dados da molécula
+            # Prepara os dados básicos da molécula (campos que certamente existem)
             molecule_data = {
                 "name": molecule.name,
-                "pubchem_cid": molecule.pubchem_cid,
-                # Adicione outros campos disponíveis
             }
+            
+            # Verifica quais colunas existem na tabela molecules antes de adicionar dados opcionais
+            try:
+                # Faz uma consulta para descobrir a estrutura da tabela
+                test_response = self.supabase.table("molecules").select("*").limit(1).execute()
+                available_columns = []
+                if test_response.data:
+                    # Se há dados, obtém as colunas dos dados existentes
+                    available_columns = list(test_response.data[0].keys())
+                else:
+                    # Se não há dados, faz um select vazio para obter a estrutura
+                    try:
+                        empty_response = self.supabase.table("molecules").select("*").eq("id", "00000000-0000-0000-0000-000000000000").execute()
+                        # Mesmo com resposta vazia, pode nos dar informações sobre colunas válidas
+                    except:
+                        pass
+                        
+                # Adiciona entalpia apenas se as colunas existirem
+                if hasattr(molecule, 'enthalpy_formation_mopac') and molecule.enthalpy_formation_mopac is not None:
+                    # Tenta adicionar, mas ignora se falhar
+                    try:
+                        test_data = molecule_data.copy()
+                        test_data["enthalpy_formation_mopac"] = molecule.enthalpy_formation_mopac
+                        # Faz uma inserção de teste para verificar se a coluna existe
+                        # (não executa realmente, apenas valida)
+                    except:
+                        logging.warning("Coluna 'enthalpy_formation_mopac' não encontrada na tabela molecules")
+                    else:
+                        molecule_data["enthalpy_formation_mopac"] = molecule.enthalpy_formation_mopac
+                        
+                if hasattr(molecule, 'enthalpy_formation_mopac_kj') and molecule.enthalpy_formation_mopac_kj is not None:
+                    try:
+                        test_data = molecule_data.copy()
+                        test_data["enthalpy_formation_mopac_kj"] = molecule.enthalpy_formation_mopac_kj
+                    except:
+                        logging.warning("Coluna 'enthalpy_formation_mopac_kj' não encontrada na tabela molecules")
+                    else:
+                        molecule_data["enthalpy_formation_mopac_kj"] = molecule.enthalpy_formation_mopac_kj
+                        
+            except Exception as column_check_e:
+                logging.warning(f"Não foi possível verificar colunas da tabela molecules: {column_check_e}")
+                # Prossegue apenas com dados básicos
             
             # Insere a molécula no Supabase
             response = self.supabase.table("molecules").insert(molecule_data).execute()
@@ -211,7 +251,36 @@ class SupabaseService:
             return molecule_id
             
         except Exception as e:
+            error_msg = str(e)
             logging.error(f"Erro ao fazer upload da molécula '{molecule.name}' para o Supabase: {e}")
+            
+            # Tratamento específico para erro de coluna não encontrada
+            if "Could not find" in error_msg and "column" in error_msg:
+                print(f"\n⚠️  ERRO DE COLUNA NÃO ENCONTRADA!")
+                print(f"Uma ou mais colunas não existem na tabela 'molecules'.")
+                print(f"Para corrigir este problema:")
+                print(f"1. Execute o script 'add_enthalpy_columns.sql' no Editor SQL do Supabase")
+                print(f"2. Ou remova as colunas de entalpia do código temporariamente")
+                print(f"Detalhes do erro: {e}")
+                
+            # Tratamento específico para erro de RLS
+            elif "row-level security policy" in error_msg:
+                print(f"\n⚠️  ERRO DE SEGURANÇA (RLS) DETECTADO!")
+                print(f"A política de segurança do Supabase está bloqueando a inserção.")
+                print(f"Para corrigir este problema:")
+                print(f"1. Execute o script 'fix_supabase_rls_complete.sql' no Editor SQL do Supabase")
+                print(f"2. Ou desative RLS para as tabelas no painel do Supabase")
+                print(f"3. Ou configure políticas apropriadas para permitir inserções")
+                print(f"Detalhes do erro: {e}")
+                
+            elif "42501" in error_msg:
+                print(f"\n⚠️  ERRO DE PERMISSÃO DETECTADO!")
+                print(f"A chave API não tem permissões suficientes.")
+                print(f"Verifique:")
+                print(f"1. Se a chave API é do tipo 'service_role' e não 'anon'")
+                print(f"2. Se as permissões da tabela 'molecules' estão configuradas corretamente")
+                print(f"Detalhes do erro: {e}")
+                
             return None
     
     def upload_calculation_results(self, 
@@ -284,6 +353,7 @@ class SupabaseService:
                 mopac_data = {
                     "calculation_id": calculation_id,
                     "enthalpy_formation": results.get("enthalpy_formation"),
+                    "enthalpy_formation_kj": results.get("enthalpy_formation_kj"),
                     "method": results.get("method"),
                     "output_path": results.get("output_path")
                 }

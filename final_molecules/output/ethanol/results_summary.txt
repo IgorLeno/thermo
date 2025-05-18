@@ -1,6 +1,7 @@
 Molécula: ethanol
 Método de Entalpia: MOPAC (PM7)
-Entalpia de Formação: -57.85803 (unidade do MOPAC)
+Entalpia de Formação: -57.85803 kcal/mol
+Entalpia de Formação: -242.07799 kJ/mol
 
 Caminhos dos arquivos intermediários:
   CREST best XYZ: c:\Repositorio\TCC\grimme_thermo\repository\crest\ethanol\crest_best.xyz

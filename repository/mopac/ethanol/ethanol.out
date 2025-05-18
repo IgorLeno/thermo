@@ -10,7 +10,7 @@
                               PM7 CALCULATION RESULTS
 
  *******************************************************************************
- *  CALCULATION DONE:                                Thu May  8 19:08:20 2025  *
+ *  CALCULATION DONE:                                Sat May 17 18:40:28 2025  *
  *  PM7        - The PM7 Hamiltonian to be used
  *  MMOK       - APPLY MM CORRECTION TO CONH BARRIER
  *  START_RES  - STARTING RESIDUE NUMBERS DEFINED
@@ -27,19 +27,19 @@
  *******************************************************************************
  START_RES=(1) PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000
 
- COMPND    -11.39433938
+ COMPND    -11.39433939
    ATOM                 CHEMICAL                   X               Y               Z
   NUMBER                 SYMBOL               (ANGSTROMS)     (ANGSTROMS)     (ANGSTROMS)
  
-     1       O(HETATM    1  O   UNL A   1)   -1.16900000  *   0.24100000  *   0.05600000  *
-     2       C(HETATM    2  C   UNL A   1)   -0.01500000  *  -0.56100000  *  -0.03300000  *
-     3       C(HETATM    3  C   UNL A   1)    1.27500000  *   0.25200000  *   0.01600000  *
-     4       H(HETATM    4  H   UNL A   1)   -0.06800000  *  -1.23800000  *   0.82300000  *
-     5       H(HETATM    5  H   UNL A   1)   -0.04000000  *  -1.16400000  *  -0.95300000  *
-     6       H(HETATM    6  H   UNL A   1)    1.34000000  *   0.91600000  *  -0.84500000  *
-     7       H(HETATM    7  H   UNL A   1)    1.30300000  *   0.85200000  *   0.92200000  *
-     8       H(HETATM    8  H   UNL A   1)    2.13500000  *  -0.41300000  *   0.00700000  *
-     9       H(HETATM    9  H   UNL A   1)   -1.13900000  *   0.90200000  *  -0.64500000  *
+     1       O(HETATM    1  O   UNL A   1)   -1.16900000  *   0.24100000  *  -0.05600000  *
+     2       C(HETATM    2  C   UNL A   1)   -0.01500000  *  -0.56100000  *   0.03300000  *
+     3       C(HETATM    3  C   UNL A   1)    1.27500000  *   0.25200000  *  -0.01600000  *
+     4       H(HETATM    4  H   UNL A   1)   -0.04000000  *  -1.16400000  *   0.95300000  *
+     5       H(HETATM    5  H   UNL A   1)   -0.06800000  *  -1.23800000  *  -0.82300000  *
+     6       H(HETATM    6  H   UNL A   1)    1.34000000  *   0.91600000  *   0.84500000  *
+     7       H(HETATM    7  H   UNL A   1)    2.13400000  *  -0.41300000  *  -0.00700000  *
+     8       H(HETATM    8  H   UNL A   1)    1.30300000  *   0.85300000  *  -0.92100000  *
+     9       H(HETATM    9  H   UNL A   1)   -1.13900000  *   0.90200000  *   0.64500000  *
  
 
  General Reference for PM7:
@@ -61,65 +61,58 @@
 
           DIAGONAL MATRIX USED AS START HESSIAN
 
- CYCLE:     1 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:    26.821 HEAT: -57.01969
- CYCLE:     2 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:    15.699 HEAT: -57.42898
- CYCLE:     3 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:    24.274 HEAT: -57.44670
- CYCLE:     4 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:    20.373 HEAT: -57.59161
- CYCLE:     5 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:    11.721 HEAT: -57.73271
- CYCLE:     6 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     8.477 HEAT: -57.77730
- CYCLE:     7 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     8.966 HEAT: -57.79707
- CYCLE:     8 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     5.357 HEAT: -57.82172
- CYCLE:     9 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     2.280 HEAT: -57.83293
- CYCLE:    10 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     1.767 HEAT: -57.83699
- CYCLE:    11 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     1.642 HEAT: -57.83970
- CYCLE:    12 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     1.056 HEAT: -57.84145
- CYCLE:    13 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.691 HEAT: -57.84271
- CYCLE:    14 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.627 HEAT: -57.84372
- CYCLE:    15 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.664 HEAT: -57.84474
- CYCLE:    16 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.730 HEAT: -57.84660
- CYCLE:    17 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.542 HEAT: -57.84733
- CYCLE:    18 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.541 HEAT: -57.84810
- CYCLE:    19 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.604 HEAT: -57.84852
- CYCLE:    20 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.945 HEAT: -57.85030
- CYCLE:    21 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.806 HEAT: -57.85133
- CYCLE:    22 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.907 HEAT: -57.85326
- CYCLE:    23 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.598 HEAT: -57.85399
- CYCLE:    24 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.310 HEAT: -57.85501
- CYCLE:    25 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.268 HEAT: -57.85545
- CYCLE:    26 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.301 HEAT: -57.85572
- CYCLE:    27 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.216 HEAT: -57.85586
- CYCLE:    28 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.181 HEAT: -57.85598
- CYCLE:    29 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.235 HEAT: -57.85627
- CYCLE:    30 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.267 HEAT: -57.85648
- CYCLE:    31 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.611 HEAT: -57.85678
- CYCLE:    32 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.380 HEAT: -57.85723
- CYCLE:    33 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.195 HEAT: -57.85747
- CYCLE:    34 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.186 HEAT: -57.85768
- CYCLE:    35 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.392 HEAT: -57.85689
- CYCLE:    36 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.140 HEAT: -57.85797
- CYCLE:    37 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.088 HEAT: -57.85797
- CYCLE:    38 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.067 HEAT: -57.85800
- CYCLE:    39 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.122 HEAT: -57.85787
- CYCLE:    40 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.034 HEAT: -57.85802
- CYCLE:    41 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.034 HEAT: -57.85801
- CYCLE:    42 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.026 HEAT: -57.85802
- CYCLE:    43 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.024 HEAT: -57.85802
- CYCLE:    44 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.019 HEAT: -57.85803
- CYCLE:    45 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.021 HEAT: -57.85800
- CYCLE:    46 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.014 HEAT: -57.85803
- CYCLE:    47 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.013 HEAT: -57.85803
- CYCLE:    48 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.011 HEAT: -57.85803
- CYCLE:    49 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.011 HEAT: -57.85803
- CYCLE:    50 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.007 HEAT: -57.85803
+ CYCLE:     1 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:    27.057 HEAT: -57.01367
+ CYCLE:     2 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:    15.657 HEAT: -57.42866
+ CYCLE:     3 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:    24.061 HEAT: -57.44809
+ CYCLE:     4 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:    19.912 HEAT: -57.59740
+ CYCLE:     5 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:    11.903 HEAT: -57.73062
+ CYCLE:     6 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     8.408 HEAT: -57.77748
+ CYCLE:     7 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     9.351 HEAT: -57.79535
+ CYCLE:     8 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     5.286 HEAT: -57.82198
+ CYCLE:     9 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     2.270 HEAT: -57.83306
+ CYCLE:    10 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     1.736 HEAT: -57.83711
+ CYCLE:    11 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     1.649 HEAT: -57.83981
+ CYCLE:    12 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     1.057 HEAT: -57.84155
+ CYCLE:    13 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.693 HEAT: -57.84281
+ CYCLE:    14 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.629 HEAT: -57.84382
+ CYCLE:    15 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.668 HEAT: -57.84486
+ CYCLE:    16 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.648 HEAT: -57.84644
+ CYCLE:    17 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.536 HEAT: -57.84742
+ CYCLE:    18 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.530 HEAT: -57.84798
+ CYCLE:    19 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.603 HEAT: -57.84851
+ CYCLE:    20 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.731 HEAT: -57.84939
+ CYCLE:    21 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.919 HEAT: -57.85099
+ CYCLE:    22 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.776 HEAT: -57.85211
+ CYCLE:    23 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.815 HEAT: -57.85383
+ CYCLE:    24 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.575 HEAT: -57.85444
+ CYCLE:    25 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.268 HEAT: -57.85536
+ CYCLE:    26 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.234 HEAT: -57.85564
+ CYCLE:    27 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.266 HEAT: -57.85584
+ CYCLE:    28 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.204 HEAT: -57.85596
+ CYCLE:    29 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.167 HEAT: -57.85615
+ CYCLE:    30 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.193 HEAT: -57.85636
+ CYCLE:    31 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.336 HEAT: -57.85681
+ CYCLE:    32 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.394 HEAT: -57.85707
+ CYCLE:    33 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.407 HEAT: -57.85745
+ CYCLE:    34 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.312 HEAT: -57.85767
+ CYCLE:    35 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.279 HEAT: -57.85782
+ CYCLE:    36 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.134 HEAT: -57.85796
+ CYCLE:    37 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.091 HEAT: -57.85799
+ CYCLE:    38 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.055 HEAT: -57.85801
+ CYCLE:    39 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.038 HEAT: -57.85802
+ CYCLE:    40 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.034 HEAT: -57.85802
+ CYCLE:    41 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.026 HEAT: -57.85803
+ CYCLE:    42 TIME:   0.000 TIME LEFT:  2.00D  GRAD.:     0.013 HEAT: -57.85803
+ CYCLE:    43 TIME:   0.008 TIME LEFT:  2.00D  GRAD.:     0.007 HEAT: -57.85803
 
-     GRADIENT =  0.00689 IS LESS THAN CUTOFF =  0.01000
+     GRADIENT =  0.00681 IS LESS THAN CUTOFF =  0.01000
 
 
 
  -------------------------------------------------------------------------------
  START_RES=(1) PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000
 
- COMPND    -11.39433938
+ COMPND    -11.39433939
 
 
      GEOMETRY OPTIMISED USING EIGENVECTOR FOLLOWING (EF).     
@@ -128,7 +121,7 @@
 
                               PM7 CALCULATION
                                                        MOPAC2016 (Version: 22.097 )
-                                                       Thu May  8 19:08:20 2025
+                                                       Sat May 17 18:40:28 2025
 
 
 
@@ -136,11 +129,11 @@
           FINAL HEAT OF FORMATION =        -57.85803 KCAL/MOL =    -242.07799 KJ/MOL
 
 
-          COSMO AREA              =         87.13 SQUARE ANGSTROMS
-          COSMO VOLUME            =         69.06 CUBIC ANGSTROMS
+          COSMO AREA              =         86.92 SQUARE ANGSTROMS
+          COSMO VOLUME            =         68.90 CUBIC ANGSTROMS
 
-          GRADIENT NORM           =          0.00689          =       0.00230 PER ATOM
-          IONIZATION POTENTIAL    =         10.640566 EV
+          GRADIENT NORM           =          0.00681          =       0.00227 PER ATOM
+          IONIZATION POTENTIAL    =         10.640511 EV
           HOMO LUMO ENERGIES (EV) =        -10.641  2.965
           NO. OF FILLED LEVELS    =         10
           MOLECULAR WEIGHT        =         46.0688         POINT GROUP:  C1  
@@ -148,15 +141,15 @@
           MOLECULAR DIMENSIONS (Angstroms)
 
             Atom       Atom       Distance
-            H     9    H     8     3.61886
-            H     6    H     4     3.10419
-            H     7    H     5     2.82663
+            H     9    H     7     3.61875
+            H     6    H     5     3.10420
+            H     4    H     8     2.82664
 
 
-          SCF CALCULATIONS        =         54
+          SCF CALCULATIONS        =         47
  
-          WALL-CLOCK TIME         =          0.164 SECONDS
-          COMPUTATION TIME        =          0.125 SECONDS
+          WALL-CLOCK TIME         =          0.211 SECONDS
+          COMPUTATION TIME        =          0.109 SECONDS
 
 
 
@@ -164,27 +157,27 @@
    ATOM                 CHEMICAL                   X               Y               Z
   NUMBER                 SYMBOL               (ANGSTROMS)     (ANGSTROMS)     (ANGSTROMS)
  
-     1       O(HETATM    1  O   UNL A   1)   -1.15640736  *   0.23460070  *   0.06464327  *
-     2       C(HETATM    2  C   UNL A   1)   -0.00671769  *  -0.58089712  *  -0.04685438  *
-     3       C(HETATM    3  C   UNL A   1)    1.26793703  *   0.25260459  *   0.00976718  *
-     4       H(HETATM    4  H   UNL A   1)   -0.10679203  *  -1.25617879  *   0.82448685  *
-     5       H(HETATM    5  H   UNL A   1)   -0.08134015  *  -1.16890618  *  -0.97903323  *
-     6       H(HETATM    6  H   UNL A   1)    1.37801469  *   0.89116145  *  -0.87294323  *
-     7       H(HETATM    7  H   UNL A   1)    1.26560414  *   0.90807226  *   0.89103859  *
-     8       H(HETATM    8  H   UNL A   1)    2.15875462  *  -0.38180854  *   0.07321928  *
-     9       H(HETATM    9  H   UNL A   1)   -1.13762234  *   0.95475536  *  -0.59286231  *
+     1       O(HETATM    1  O   UNL A   1)   -1.15647579  *   0.23464866  *  -0.06450865  *
+     2       C(HETATM    2  C   UNL A   1)   -0.00676547  *  -0.58084836  *   0.04676094  *
+     3       C(HETATM    3  C   UNL A   1)    1.26786554  *   0.25270047  *  -0.00962616  *
+     4       H(HETATM    4  H   UNL A   1)   -0.08139296  *  -1.16913007  *   0.97876917  *
+     5       H(HETATM    5  H   UNL A   1)   -0.10681527  *  -1.25588111  *  -0.82477528  *
+     6       H(HETATM    6  H   UNL A   1)    1.37773421  *   0.89133464  *   0.87305457  *
+     7       H(HETATM    7  H   UNL A   1)    2.15871357  *  -0.38168693  *  -0.07281029  *
+     8       H(HETATM    8  H   UNL A   1)    1.26571223  *   0.90807826  *  -0.89096266  *
+     9       H(HETATM    9  H   UNL A   1)   -1.13764852  *   0.95469039  *   0.59311794  *
 
                              CARTESIAN COORDINATES
 
-   1    O       -1.156407356     0.234600700     0.064643271
-   2    C       -0.006717691    -0.580897121    -0.046854384
-   3    C        1.267937027     0.252604594     0.009767183
-   4    H       -0.106792035    -1.256178791     0.824486848
-   5    H       -0.081340151    -1.168906184    -0.979033232
-   6    H        1.378014688     0.891161448    -0.872943235
-   7    H        1.265604139     0.908072261     0.891038591
-   8    H        2.158754617    -0.381808536     0.073219281
-   9    H       -1.137622345     0.954755359    -0.592862307
+   1    O       -1.156475786     0.234648661    -0.064508652
+   2    C       -0.006765473    -0.580848360     0.046760944
+   3    C        1.267865543     0.252700468    -0.009626162
+   4    H       -0.081392958    -1.169130073     0.978769167
+   5    H       -0.106815266    -1.255881111    -0.824775276
+   6    H        1.377734210     0.891334638     0.873054571
+   7    H        2.158713571    -0.381686931    -0.072810294
+   8    H        1.265712234     0.908078264    -0.890962663
+   9    H       -1.137648524     0.954690387     0.593117945
 
 
            Empirical Formula: C2 H6 O  =     9 atoms
@@ -201,26 +194,26 @@
 
                  2 A       3 A       4 A       5 A       6 A       7 A       8 A       9 A   
 
-               -26.232   -21.679   -17.177   -15.613   -15.167   -13.456   -13.011   -11.893
+               -26.232   -21.679   -17.177   -15.613   -15.167   -13.456   -13.011   -11.894
   
-  S   O    1   -0.4876   -0.1387    0.1714   -0.1628    0.1667   -0.1372    0.1135   -0.2059
-  Px  O    1    0.0570    0.1726    0.1594    0.3884   -0.2672   -0.0718   -0.3582    0.3909
-  Py  O    1   -0.0973   -0.3200   -0.3905   -0.2263   -0.3822   -0.0467    0.1446    0.2358
-  Pz  O    1    0.0821    0.0775    0.4183   -0.1293    0.0131   -0.3876    0.2833   -0.2138
-  S   C    2    0.3508    0.4648   -0.1160   -0.0148   -0.0872   -0.0005    0.0339    0.0001
-  Px  C    2    0.2393   -0.1648   -0.2371   -0.2128   -0.2562   -0.2531    0.1216   -0.2489
-  Py  C    2   -0.0318   -0.1930    0.1581    0.3643   -0.2971   -0.2578   -0.2652   -0.1210
-  Pz  C    2    0.0102    0.0219    0.3993   -0.2980   -0.2523   -0.0752    0.1628    0.3884
-  S   C    3    0.5457   -0.3842    0.0718    0.0104    0.0245   -0.0333   -0.0059   -0.0706
-  Px  C    3   -0.0298   -0.1887    0.0911   -0.1973    0.4844    0.1067   -0.2610    0.3148
-  Py  C    3   -0.0602   -0.1579    0.1686    0.3445    0.0201    0.4410    0.4297    0.0770
-  Pz  C    3   -0.0015    0.0046    0.2344   -0.2907   -0.2827    0.4561   -0.2845   -0.2743
-  S   H    4    0.1632    0.2941    0.0912   -0.3087   -0.0425    0.0953    0.2406    0.3347
-  S   H    5    0.1563    0.2670   -0.3227    0.0363    0.2256    0.1665    0.0276   -0.2081
-  S   H    6    0.2359   -0.2508   -0.0200    0.2838    0.2104   -0.0879    0.3441    0.2043
-  S   H    7    0.2334   -0.2322    0.2173   -0.0149   -0.1337    0.4383    0.0209   -0.1789
-  S   H    8    0.2613   -0.2185    0.0307   -0.2497    0.2655   -0.1217   -0.3653    0.1180
-  S   H    9   -0.1721   -0.1764   -0.3254   -0.0757   -0.1688    0.1451   -0.0130    0.2187
+  S   O    1   -0.4876   -0.1387   -0.1714   -0.1628    0.1667    0.1371    0.1136   -0.2059
+  Px  O    1    0.0570    0.1726   -0.1594    0.3884   -0.2673    0.0719   -0.3582    0.3910
+  Py  O    1   -0.0973   -0.3200    0.3904   -0.2264   -0.3821    0.0468    0.1447    0.2358
+  Pz  O    1   -0.0821   -0.0775    0.4183    0.1292   -0.0131   -0.3876   -0.2833    0.2138
+  S   C    2    0.3508    0.4648    0.1160   -0.0148   -0.0872    0.0005    0.0339    0.0001
+  Px  C    2    0.2393   -0.1648    0.2371   -0.2129   -0.2562    0.2531    0.1216   -0.2489
+  Py  C    2   -0.0318   -0.1930   -0.1582    0.3642   -0.2972    0.2579   -0.2651   -0.1209
+  Pz  C    2   -0.0103   -0.0219    0.3992    0.2981    0.2522   -0.0752   -0.1629   -0.3884
+  S   C    3    0.5457   -0.3842   -0.0718    0.0104    0.0245    0.0333   -0.0059   -0.0707
+  Px  C    3   -0.0297   -0.1887   -0.0912   -0.1972    0.4844   -0.1066   -0.2610    0.3148
+  Py  C    3   -0.0602   -0.1579   -0.1687    0.3444    0.0200   -0.4411    0.4296    0.0769
+  Pz  C    3    0.0015   -0.0046    0.2344    0.2908    0.2827    0.4559    0.2847    0.2743
+  S   H    4    0.1563    0.2670    0.3227    0.0363    0.2256   -0.1665    0.0276   -0.2081
+  S   H    5    0.1632    0.2941   -0.0912   -0.3087   -0.0425   -0.0953    0.2406    0.3347
+  S   H    6    0.2358   -0.2508    0.0199    0.2839    0.2103    0.0877    0.3442    0.2042
+  S   H    7    0.2613   -0.2185   -0.0306   -0.2496    0.2656    0.1219   -0.3652    0.1181
+  S   H    8    0.2334   -0.2322   -0.2173   -0.0150   -0.1337   -0.4383    0.0207   -0.1789
+  S   H    9   -0.1721   -0.1764    0.3254   -0.0757   -0.1688   -0.1450   -0.0130    0.2187
 
 
    Root No.      10        11        12        13        14        15        16        17
@@ -229,38 +222,38 @@
 
                -10.641     2.965     4.072     5.184     5.449     5.687     5.792     6.307
   
-  S   O    1    0.0180    0.2519   -0.0106   -0.0410    0.0560    0.0498    0.0145   -0.0673
-  Px  O    1    0.3792    0.4522   -0.1396    0.0199    0.0195   -0.0691   -0.0206    0.1514
-  Py  O    1    0.4772   -0.0896   -0.0137   -0.1241    0.0869    0.2202    0.0671   -0.3844
-  Pz  O    1    0.5837   -0.2577    0.0017    0.0479   -0.1223   -0.1201   -0.1062    0.2323
-  S   C    2    0.0045   -0.1593    0.3349    0.0047   -0.1930   -0.1055   -0.3413   -0.3932
-  Px  C    2   -0.1035    0.5696    0.4099    0.0624    0.0129   -0.1320   -0.0344    0.2497
-  Py  C    2   -0.1312   -0.3896    0.4605   -0.0448    0.0765    0.2286    0.3026    0.0712
-  Pz  C    2   -0.2615   -0.0118    0.0119    0.4237    0.1264   -0.2961    0.3094   -0.2373
-  S   C    3   -0.0722   -0.0219   -0.2113   -0.0264   -0.0037    0.0094    0.0591   -0.0287
-  Px  C    3    0.2076    0.0963    0.5178    0.0814   -0.3588    0.0664    0.1040   -0.0451
-  Py  C    3    0.1165    0.0355    0.3745   -0.1171    0.4117   -0.2168   -0.1877    0.0044
-  Pz  C    3    0.1032    0.0021    0.0309    0.3915    0.1316    0.3819   -0.2822    0.0790
-  S   H    4   -0.1027   -0.0206    0.0702   -0.4081    0.0959    0.4236    0.1653    0.4259
-  S   H    5    0.3076   -0.0329    0.0298    0.3443    0.2859   -0.0567    0.5844    0.0907
-  S   H    6   -0.0436    0.0369   -0.1060    0.4395   -0.0963    0.4181   -0.1666    0.0472
-  S   H    7    0.0918    0.0491   -0.1230   -0.2747   -0.3918   -0.1906    0.2878   -0.0503
-  S   H    8    0.0503   -0.1427   -0.0401   -0.1541    0.5428   -0.2040   -0.2142    0.0341
-  S   H    9   -0.0261   -0.3453   -0.0096    0.2072   -0.2253   -0.3585   -0.1556    0.5365
+  S   O    1   -0.0180    0.2519   -0.0106   -0.0410    0.0560    0.0499    0.0145   -0.0673
+  Px  O    1   -0.3792    0.4522   -0.1396    0.0199    0.0195   -0.0690   -0.0206    0.1514
+  Py  O    1   -0.4773   -0.0897   -0.0137   -0.1241    0.0869    0.2202    0.0671   -0.3844
+  Pz  O    1    0.5836    0.2577   -0.0017   -0.0479    0.1223    0.1202    0.1062   -0.2323
+  S   C    2   -0.0045   -0.1593    0.3349    0.0048   -0.1930   -0.1056   -0.3412   -0.3932
+  Px  C    2    0.1034    0.5696    0.4099    0.0624    0.0129   -0.1320   -0.0344    0.2497
+  Py  C    2    0.1312   -0.3895    0.4605   -0.0446    0.0765    0.2285    0.3027    0.0712
+  Pz  C    2   -0.2615    0.0117   -0.0118   -0.4237   -0.1265    0.2962   -0.3094    0.2372
+  S   C    3    0.0722   -0.0219   -0.2113   -0.0264   -0.0037    0.0094    0.0591   -0.0287
+  Px  C    3   -0.2076    0.0963    0.5178    0.0814   -0.3589    0.0664    0.1040   -0.0451
+  Py  C    3   -0.1166    0.0355    0.3746   -0.1170    0.4117   -0.2166   -0.1878    0.0044
+  Pz  C    3    0.1032   -0.0021   -0.0308   -0.3916   -0.1315   -0.3819    0.2821   -0.0789
+  S   H    4   -0.3076   -0.0329    0.0298    0.3443    0.2860   -0.0566    0.5844    0.0907
+  S   H    5    0.1028   -0.0206    0.0702   -0.4081    0.0958    0.4237    0.1652    0.4259
+  S   H    6    0.0436    0.0370   -0.1060    0.4395   -0.0966    0.4181   -0.1665    0.0472
+  S   H    7   -0.0502   -0.1427   -0.0401   -0.1539    0.5429   -0.2037   -0.2143    0.0342
+  S   H    8   -0.0918    0.0491   -0.1230   -0.2749   -0.3917   -0.1908    0.2878   -0.0503
+  S   H    9    0.0261   -0.3453   -0.0096    0.2072   -0.2252   -0.3585   -0.1555    0.5365
 
 
               NET ATOMIC CHARGES AND DIPOLE CONTRIBUTIONS
 
   ATOM NO.                 TYPE                        CHARGE      No. of ELECS.   s-Pop       p-Pop       
-    1          O(HETATM    1  O   UNL A   1)          -0.550532        6.5505     1.84866     4.70187
+    1          O(HETATM    1  O   UNL A   1)          -0.550533        6.5505     1.84866     4.70187
     2          C(HETATM    2  C   UNL A   1)           0.024088        3.9759     1.08039     2.89552
-    3          C(HETATM    3  C   UNL A   1)          -0.495953        4.4960     1.05909     3.43687
-    4          H(HETATM    4  H   UNL A   1)           0.138832        0.8612     0.86117
-    5          H(HETATM    5  H   UNL A   1)           0.110941        0.8891     0.88906
-    6          H(HETATM    6  H   UNL A   1)           0.146843        0.8532     0.85316
-    7          H(HETATM    7  H   UNL A   1)           0.162058        0.8379     0.83794
-    8          H(HETATM    8  H   UNL A   1)           0.153522        0.8465     0.84648
-    9          H(HETATM    9  H   UNL A   1)           0.310199        0.6898     0.68980
+    3          C(HETATM    3  C   UNL A   1)          -0.495951        4.4960     1.05908     3.43687
+    4          H(HETATM    4  H   UNL A   1)           0.110944        0.8891     0.88906
+    5          H(HETATM    5  H   UNL A   1)           0.138832        0.8612     0.86117
+    6          H(HETATM    6  H   UNL A   1)           0.146847        0.8532     0.85315
+    7          H(HETATM    7  H   UNL A   1)           0.153521        0.8465     0.84648
+    8          H(HETATM    8  H   UNL A   1)           0.162054        0.8379     0.83795
+    9          H(HETATM    9  H   UNL A   1)           0.310200        0.6898     0.68980
 
           NET CHARGE ON RESIDUES
 
@@ -271,22 +264,22 @@
 
 
  DIPOLE           X         Y         Z       TOTAL
- POINT-CHG.     1.776    -0.273    -0.923     2.020
- HYBRID        -0.046     0.411    -0.180     0.451
- SUM            1.731     0.138    -1.103     2.057
+ POINT-CHG.     1.776    -0.274     0.923     2.020
+ HYBRID        -0.045     0.411     0.180     0.451
+ SUM            1.731     0.137     1.103     2.057
 
 
           ATOMIC ORBITAL ELECTRON POPULATIONS
 
                    Atom                  s        px        py        pz   
-   O(HETATM    1  O   UNL A   1)   1.84866   1.49318   1.53609   1.67259
-   C(HETATM    2  C   UNL A   1)   1.08039   0.82514   0.94270   1.12768
-   C(HETATM    3  C   UNL A   1)   1.05909   1.09722   1.15093   1.18872
-   H(HETATM    4  H   UNL A   1)   0.86117
-   H(HETATM    5  H   UNL A   1)   0.88906
-   H(HETATM    6  H   UNL A   1)   0.85316
-   H(HETATM    7  H   UNL A   1)   0.83794
-   H(HETATM    8  H   UNL A   1)   0.84648
+   O(HETATM    1  O   UNL A   1)   1.84866   1.49316   1.53618   1.67253
+   C(HETATM    2  C   UNL A   1)   1.08039   0.82514   0.94269   1.12769
+   C(HETATM    3  C   UNL A   1)   1.05908   1.09722   1.15092   1.18872
+   H(HETATM    4  H   UNL A   1)   0.88906
+   H(HETATM    5  H   UNL A   1)   0.86117
+   H(HETATM    6  H   UNL A   1)   0.85315
+   H(HETATM    7  H   UNL A   1)   0.84648
+   H(HETATM    8  H   UNL A   1)   0.83795
    H(HETATM    9  H   UNL A   1)   0.68980
 
            DATA FOR GRAPH WRITTEN TO DISK
@@ -299,6 +292,6 @@
 
 
 
- TOTAL JOB TIME:             0.17 SECONDS
+ TOTAL JOB TIME:             0.22 SECONDS
 
  == MOPAC DONE ==
