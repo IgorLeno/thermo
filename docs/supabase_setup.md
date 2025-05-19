@@ -94,10 +94,15 @@ Se a conexão for bem-sucedida, você verá uma mensagem confirmando.
 
 Após configurar o Supabase e realizar cálculos, você pode acessar o dashboard web:
 
-1. No painel lateral do Supabase, clique em "Table Editor"
-2. Explore as tabelas para ver os dados armazenados
-3. Use o SQL Editor para fazer consultas personalizadas
-4. Para visualizar arquivos, acesse a seção "Storage"
+1. Execute o programa: `python main.py`
+2. Escolha a opção "6. Configurar dashboard (Supabase)"
+3. Escolha a opção "4. Abrir o dashboard no navegador"
+4. Selecione qual interface deseja acessar:
+   - **Dashboard principal**: Visão geral do projeto
+   - **Table Editor**: Para visualizar os dados das moléculas
+   - **Storage**: Para visualizar arquivos de moléculas
+
+**IMPORTANTE**: Todas as interfaces do Supabase requerem que você faça login na sua conta. Mantenha suas credenciais de login em mãos.
 
 ## Solução de problemas
 

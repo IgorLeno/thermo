@@ -17,6 +17,8 @@ import os
 import sys
 import time
 import webbrowser
+import subprocess
+import shutil as shell_utils
 
 class CommandLineInterface:
     """
@@ -50,6 +52,123 @@ class CommandLineInterface:
                 logging.error("Biblioteca Supabase não encontrada. Execute 'pip install supabase'.")
             except Exception as e:
                 logging.error(f"Erro ao inicializar serviço Supabase na interface: {e}")
+
+    def _detect_browsers(self):
+        """Detecta navegadores instalados no sistema."""
+        browsers = {}
+        
+        # Caminhos comuns do Chrome no Windows
+        chrome_paths = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            os.path.expanduser(r"~\AppData\Local\Google\Chrome\Application\chrome.exe")
+        ]
+        
+        for path in chrome_paths:
+            if os.path.exists(path):
+                browsers['chrome'] = path
+                break
+        
+        # Caminhos comuns do Firefox
+        firefox_paths = [
+            r"C:\Program Files\Mozilla Firefox\firefox.exe",
+            r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe"
+        ]
+        
+        for path in firefox_paths:
+            if os.path.exists(path):
+                browsers['firefox'] = path
+                break
+        
+        # Edge (geralmente está instalado por padrão no Windows)
+        edge_paths = [
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+        ]
+        
+        for path in edge_paths:
+            if os.path.exists(path):
+                browsers['edge'] = path
+                break
+        
+        return browsers
+
+    def _open_url_with_browser(self, url, browser_choice=None):
+        """
+        Abre uma URL com um navegador específico ou permite ao usuário escolher.
+        
+        Args:
+            url: URL a ser aberta
+            browser_choice: 'chrome', 'firefox', 'edge', 'default' ou None para mostrar menu
+        """
+        browsers = self._detect_browsers()
+        
+        if browser_choice is None:
+            # Mostra opções de navegador ao usuário
+            print("\nEscolha o navegador para abrir:")
+            options = []
+            
+            if 'chrome' in browsers:
+                options.append(('chrome', 'Google Chrome'))
+            if 'firefox' in browsers:
+                options.append(('firefox', 'Mozilla Firefox'))
+            if 'edge' in browsers:
+                options.append(('edge', 'Microsoft Edge'))
+            
+            options.append(('default', 'Navegador padrão do sistema'))
+            options.append(('clipboard', 'Copiar URL para área de transferência'))
+            options.append(('cancel', 'Cancelar'))
+            
+            for i, (key, name) in enumerate(options, 1):
+                print(f"{i}. {name}")
+            
+            try:
+                choice = int(input("\nEscolha uma opção: ")) - 1
+                if 0 <= choice < len(options):
+                    browser_choice = options[choice][0]
+                else:
+                    print("Opção inválida.")
+                    return False
+            except ValueError:
+                print("Por favor, digite um número válido.")
+                return False
+        
+        try:
+            if browser_choice == 'cancel':
+                print("Operação cancelada.")
+                return False
+            elif browser_choice == 'clipboard':
+                # Copia para área de transferência
+                try:
+                    import pyperclip
+                    pyperclip.copy(url)
+                    print(f"URL copiada para área de transferência: {url}")
+                    print("Cole no navegador de sua escolha (Ctrl+V)")
+                    return True
+                except ImportError:
+                    # Fallback: mostra a URL na tela
+                    print(f"URL para copiar manualmente: {url}")
+                    print("(Copie esta URL e cole no navegador logado na conta correta)")
+                    return True
+            elif browser_choice == 'default':
+                # Usa navegador padrão
+                webbrowser.open(url)
+                return True
+            elif browser_choice in browsers:
+                # Usa navegador específico
+                browser_path = browsers[browser_choice]
+                print(f"Abrindo com {browser_choice.title()}...")
+                
+                # Abre o navegador específico com a URL
+                subprocess.Popen([browser_path, url])
+                return True
+            else:
+                print(f"Navegador {browser_choice} não encontrado no sistema.")
+                return False
+        except Exception as e:
+            print(f"Erro ao abrir URL: {e}")
+            print(f"URL para abrir manualmente: {url}")
+            return False
 
     def run(self):
         """Exibe o menu principal e aguarda a escolha do usuário."""
@@ -568,12 +687,19 @@ class CommandLineInterface:
                 print(f"Chave da API: {'*' * 8 if self.settings.supabase.key else 'Não configurada'}")
                 print(f"Upload de arquivos: {'Habilitado' if self.settings.supabase.storage_enabled else 'Desabilitado'}")
             
+            # Mostra navegadores detectados
+            browsers = self._detect_browsers()
+            browsers_list = list(browsers.keys())
+            if browsers_list:
+                print(f"Navegadores detectados: {', '.join([b.title() for b in browsers_list])}")
+            
             print("\nOpções:")
             print("1. Configurar credenciais do Supabase")
             print("2. Testar conexão com o Supabase")
             print("3. Sincronizar resultados existentes")
             print("4. Abrir o dashboard no navegador")
-            print("5. Voltar ao menu principal")
+            print("5. Testar detecção de navegadores")
+            print("6. Voltar ao menu principal")
             
             choice = input("\nEscolha uma opção: ")
             
@@ -586,9 +712,35 @@ class CommandLineInterface:
             elif choice == "4":
                 self._open_dashboard()
             elif choice == "5":
+                self._test_browser_detection()
+            elif choice == "6":
                 break
             else:
                 print("Opção inválida. Tente novamente.")
+    
+    def _test_browser_detection(self):
+        """Testa a detecção de navegadores e permite abrir uma URL de teste."""
+        print("\n----- Teste de Detecção de Navegadores -----")
+        
+        browsers = self._detect_browsers()
+        
+        if browsers:
+            print("Navegadores encontrados:")
+            for browser, path in browsers.items():
+                status = "✓ Funcional" if os.path.exists(path) else "✗ Não encontrado"
+                print(f"  - {browser.title()}: {status}")
+                print(f"    Caminho: {path}")
+        else:
+            print("Nenhum navegador encontrado nos caminhos padrão.")
+        
+        # Oferece teste com URL
+        test_url = "https://www.google.com"
+        if input(f"\nDeseja testar abrindo {test_url}? (s/n): ").lower() == 's':
+            success = self._open_url_with_browser(test_url)
+            if success:
+                print("Teste realizado com sucesso!")
+            else:
+                print("Teste não pôde ser concluído.")
     
     def _configure_supabase_credentials(self):
         """Configura as credenciais do Supabase."""
@@ -929,26 +1081,84 @@ class CommandLineInterface:
             import traceback
             traceback.print_exc()    
     def _open_dashboard(self):
-        """Abre o dashboard Supabase no navegador."""
+        """
+        Abre o dashboard/interface do Supabase no navegador.
+        
+        O "dashboard" do projeto é o Table Editor nativo do Supabase onde os dados
+        das moléculas são armazenados e podem ser visualizados. Também oferece acesso
+        ao Storage para ver arquivos de moléculas.
+        """
         if not self.settings.supabase.enabled:
             print("Supabase está desabilitado. Habilite-o primeiro.")
             return
         
-        # Extrai o domínio do projeto a partir da URL da API
+        # Extrai o projeto ID da URL da API
         if not self.settings.supabase.url:
             print("URL da API do Supabase não configurada.")
             return
         
         try:
-            # A URL da API é geralmente algo como: https://xyzabc.supabase.co/rest/v1/
-            # Precisamos extrair a parte https://xyzabc.supabase.co
+            # A URL da API é algo como: https://iyvvuguktlktwjwhoppf.supabase.co/rest/v1/
+            # Precisamos extrair o projeto ID: iyvvuguktlktwjwhoppf
             parts = self.settings.supabase.url.split("/")
             if len(parts) >= 3:
-                base_url = f"{parts[0]}//{parts[2]}"
-                dashboard_url = f"{base_url}/dashboard/"
+                project_domain = parts[2]  # ex: iyvvuguktlktwjwhoppf.supabase.co
+                project_id = project_domain.split('.')[0]  # ex: iyvvuguktlktwjwhoppf
                 
-                print(f"Abrindo dashboard Supabase em: {dashboard_url}")
-                webbrowser.open(dashboard_url)
+                # Mostra opções para o usuário escolher qual página acessar
+                print("\nOpções do Dashboard:")
+                print("1. Dashboard principal (visão geral do projeto)")
+                print("2. Table Editor (visualizar dados das moléculas)")
+                print("3. Storage (visualizar arquivos de moléculas)")
+                print("4. Cancelar")
+                
+                choice = input("\nEscolha uma opção: ")
+                
+                dashboard_url = None
+                if choice == "1":
+                    # Dashboard principal do projeto
+                    dashboard_url = f"https://supabase.com/dashboard/project/{project_id}"
+                    print(f"Preparando para abrir dashboard principal do Supabase...")
+                    print(f"NOTA: Esta página requer login na sua conta Supabase")
+                elif choice == "2":
+                    # Table Editor diretamente
+                    dashboard_url = f"https://supabase.com/dashboard/project/{project_id}/editor"
+                    print(f"Preparando para abrir Table Editor do Supabase...")
+                    print(f"Você verá as tabelas 'molecules', 'calculations', 'crest_results' e 'mopac_results'")
+                    print(f"NOTA: Requer login na sua conta Supabase")
+                elif choice == "3":
+                    # Storage
+                    dashboard_url = f"https://supabase.com/dashboard/project/{project_id}/storage/buckets"
+                    print(f"Preparando para abrir Storage do Supabase...")
+                    print(f"Procure pelo bucket '{self.settings.supabase.molecules_bucket}' para arquivos de moléculas")
+                    print(f"NOTA: Requer login na sua conta Supabase")
+                elif choice == "4":
+                    print("Operação cancelada.")
+                    return
+                else:
+                    print("Opção inválida.")
+                    return
+                
+                if dashboard_url:
+                    print(f"URL: {dashboard_url}")
+                    print(f"Projeto ID: {project_id}")
+                    
+                    # Detecta navegadores e pergunta qual usar
+                    browsers = self._detect_browsers()
+                    
+                    # Se Chrome está disponível, sugere usá-lo primeiro
+                    if 'chrome' in browsers:
+                        print(f"\n💡 DICA: Chrome detectado no sistema.")
+                        print(f"Se sua conta Supabase está logada no Chrome, recomendamos usá-lo.")
+                    
+                    # Permite escolher o navegador
+                    success = self._open_url_with_browser(dashboard_url)
+                    
+                    if success:
+                        print("Dashboard aberto com sucesso!")
+                    else:
+                        print("Não foi possível abrir o dashboard automaticamente.")
+                
             else:
                 print("Formato de URL inválido.")
         except Exception as e:
