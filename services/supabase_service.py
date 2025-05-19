@@ -187,57 +187,26 @@ class SupabaseService:
                 .execute()
                 
             if response.data:
-                # Molécula já existe, retorna o ID existente
+                # Molécula já existe, atualiza com novos dados
                 molecule_id = response.data[0]["id"]
                 logging.info(f"Molécula '{molecule.name}' já existe no Supabase com ID: {molecule_id}")
+                
+                # Prepara os dados para atualização
+                update_data = self._prepare_molecule_data(molecule)
+                if update_data:
+                    update_response = self.supabase.table("molecules") \
+                        .update(update_data) \
+                        .eq("id", molecule_id) \
+                        .execute()
+                    logging.info(f"Molécula '{molecule.name}' atualizada no Supabase")
+                
                 return molecule_id
             
-            # Prepara os dados básicos da molécula (campos que certamente existem)
-            molecule_data = {
-                "name": molecule.name,
-            }
-            
-            # Verifica quais colunas existem na tabela molecules antes de adicionar dados opcionais
-            try:
-                # Faz uma consulta para descobrir a estrutura da tabela
-                test_response = self.supabase.table("molecules").select("*").limit(1).execute()
-                available_columns = []
-                if test_response.data:
-                    # Se há dados, obtém as colunas dos dados existentes
-                    available_columns = list(test_response.data[0].keys())
-                else:
-                    # Se não há dados, faz um select vazio para obter a estrutura
-                    try:
-                        empty_response = self.supabase.table("molecules").select("*").eq("id", "00000000-0000-0000-0000-000000000000").execute()
-                        # Mesmo com resposta vazia, pode nos dar informações sobre colunas válidas
-                    except:
-                        pass
-                        
-                # Adiciona entalpia apenas se as colunas existirem
-                if hasattr(molecule, 'enthalpy_formation_mopac') and molecule.enthalpy_formation_mopac is not None:
-                    # Tenta adicionar, mas ignora se falhar
-                    try:
-                        test_data = molecule_data.copy()
-                        test_data["enthalpy_formation_mopac"] = molecule.enthalpy_formation_mopac
-                        # Faz uma inserção de teste para verificar se a coluna existe
-                        # (não executa realmente, apenas valida)
-                    except:
-                        logging.warning("Coluna 'enthalpy_formation_mopac' não encontrada na tabela molecules")
-                    else:
-                        molecule_data["enthalpy_formation_mopac"] = molecule.enthalpy_formation_mopac
-                        
-                if hasattr(molecule, 'enthalpy_formation_mopac_kj') and molecule.enthalpy_formation_mopac_kj is not None:
-                    try:
-                        test_data = molecule_data.copy()
-                        test_data["enthalpy_formation_mopac_kj"] = molecule.enthalpy_formation_mopac_kj
-                    except:
-                        logging.warning("Coluna 'enthalpy_formation_mopac_kj' não encontrada na tabela molecules")
-                    else:
-                        molecule_data["enthalpy_formation_mopac_kj"] = molecule.enthalpy_formation_mopac_kj
-                        
-            except Exception as column_check_e:
-                logging.warning(f"Não foi possível verificar colunas da tabela molecules: {column_check_e}")
-                # Prossegue apenas com dados básicos
+            # Prepara os dados básicos da molécula
+            molecule_data = self._prepare_molecule_data(molecule)
+            if not molecule_data:
+                logging.error(f"Não foi possível preparar dados para a molécula '{molecule.name}'")
+                return None
             
             # Insere a molécula no Supabase
             response = self.supabase.table("molecules").insert(molecule_data).execute()
@@ -282,6 +251,45 @@ class SupabaseService:
                 print(f"Detalhes do erro: {e}")
                 
             return None
+    
+    def _prepare_molecule_data(self, molecule: Molecule) -> Dict[str, Any]:
+        """
+        Prepara os dados da molécula para inserção/atualização no Supabase.
+        
+        Args:
+            molecule: Objeto Molecule
+            
+        Returns:
+            Dicionário com os dados preparados
+        """
+        # Dados básicos obrigatórios
+        molecule_data = {
+            "name": molecule.name,
+        }
+        
+        # Adiciona campos opcionais apenas se existirem
+        if hasattr(molecule, 'smiles') and molecule.smiles:
+            molecule_data["smiles"] = molecule.smiles
+            
+        # Entalpia MOPAC
+        if hasattr(molecule, 'enthalpy_formation_mopac_kj') and molecule.enthalpy_formation_mopac_kj is not None:
+            molecule_data["hf_mopac"] = molecule.enthalpy_formation_mopac_kj
+        elif hasattr(molecule, 'enthalpy_kj_mol') and molecule.enthalpy_kj_mol is not None:
+            molecule_data["hf_mopac"] = molecule.enthalpy_kj_mol
+            
+        # Entalpia Chemperium
+        if hasattr(molecule, 'enthalpy_chemperium_kj_mol') and molecule.enthalpy_chemperium_kj_mol is not None:
+            molecule_data["hf_chemp"] = molecule.enthalpy_chemperium_kj_mol
+            
+        # Incerteza Chemperium
+        if hasattr(molecule, 'enthalpy_chemperium_uncertainty_kj_mol') and molecule.enthalpy_chemperium_uncertainty_kj_mol is not None:
+            molecule_data["hf_chemp_uncertainty"] = molecule.enthalpy_chemperium_uncertainty_kj_mol
+            
+        # Score de confiabilidade
+        if hasattr(molecule, 'chemperium_reliability_score') and molecule.chemperium_reliability_score is not None:
+            molecule_data["chemperium_reliability"] = molecule.chemperium_reliability_score
+        
+        return molecule_data
     
     def upload_calculation_results(self, 
                                   molecule_id: str, 

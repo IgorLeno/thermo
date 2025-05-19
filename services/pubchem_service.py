@@ -15,6 +15,46 @@ class PubChemService:
         self.base_url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
         self.file_service = FileService()
 
+    def get_smiles_by_name(self, molecule_name: str) -> Optional[str]:
+        """
+        Busca o SMILES de uma molécula no PubChem pelo nome.
+
+        Args:
+            molecule_name: Nome da molécula
+
+        Returns:
+            SMILES da molécula ou None se não encontrada
+        """
+        try:
+            # Busca o CID pelo nome
+            cid_url = f"{self.base_url}/compound/name/{molecule_name}/cids/TXT"
+            cid_response = requests.get(cid_url)
+            cid_response.raise_for_status()
+
+            cid = int(cid_response.text.strip())
+
+            # Busca o SMILES pelo CID
+            smiles_url = f"{self.base_url}/compound/cid/{cid}/property/CanonicalSMILES/TXT"
+            smiles_response = requests.get(smiles_url)
+            smiles_response.raise_for_status()
+
+            smiles = smiles_response.text.strip()
+            logging.info(f"SMILES obtido para {molecule_name} (CID: {cid}): {smiles}")
+            return smiles
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logging.warning(f"SMILES para '{molecule_name}' não encontrado no PubChem.")
+                print(f"SMILES para '{molecule_name}' não encontrado no PubChem.")
+            else:
+                logging.error(f"Erro ao acessar o PubChem para SMILES: {e}")
+                print(f"Erro ao acessar o PubChem. Veja o log para mais detalhes.")
+            return None
+        except Exception as e:
+            logging.error(f"Erro ao obter SMILES para {molecule_name}: {e}")
+            print(f"Erro ao obter SMILES para {molecule_name}. Veja o log para mais detalhes.")
+            return None
+
     def get_sdf_by_name(self, molecule_name: str) -> tuple[Optional[str], Optional[int]]:
         """
         Busca o arquivo SDF de uma molécula no PubChem pelo nome.

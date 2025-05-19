@@ -13,3 +13,11 @@ class CalculationError(Exception):
 class SettingsError(Exception):
     """Exceção para erros relacionados às configurações."""
     pass
+
+class ChemperiumError(Exception):
+    """Exceção para erros relacionados ao Chemperium."""
+    pass
+
+class ConfigurationError(Exception):
+    """Exceção para erros de configuração."""
+    pass

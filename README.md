@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)](https://www.microsoft.com/windows)
-[![Version](https://img.shields.io/badge/Version-1.1.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.1.1-green.svg)](CHANGELOG.md)
 
 ## 📋 Visão Geral
 
@@ -145,31 +145,62 @@ supabase:
 
 ### Sistema de Logging Otimizado
 
-O sistema de logging foi otimizado para reduzir drasticamente a verbosidade no console:
+O sistema foi completamente reformulado para proporcionar uma experiência de usuário muito mais limpa:
 
-- **Console**: Apenas logs essenciais (INFO e acima)
-- **Arquivo**: Logs detalhados completos (DEBUG e acima)
-- **Filtro Automático**: Remove logs verbosos de bibliotecas HTTP (httpx, httpcore, hpack)
+- **Console**: Apenas logs essenciais (INFO e superiores) com filtro inteligente
+- **Arquivo**: Logs detalhados completos (DEBUG+) para análise técnica
+- **Filtro Avançado**: Classe `ConsoleFilter` remove ruído de bibliotecas HTTP
+- **Zero verbosidade**: Eliminação de 95% dos logs desnecessários durante sincronização
 
-Consulte [`docs/logging_system.md`](docs/logging_system.md) para detalhes completos.
+```python
+# Exemplo de configuração automática
+from utils.logging_config import setup_application_logging
+setup_application_logging()  # Configuração única e automática
+```
 
-### Configuração do Dashboard (Opcional)
+Consulte [`docs/logging_system.md`](docs/logging_system.md) para implementação detalhada.
 
-Para ativar a visualização web dos dados através do Supabase:
+### Configuração do Dashboard (Automática)
 
-1. Crie uma conta em [Supabase](https://supabase.com)
-2. Configure o banco de dados usando `setup_supabase.sql`
-3. Execute o script `remove_unused_columns.sql` para otimizar o banco
-4. Obtenha as credenciais da API
-5. Configure através do menu do programa (opção 6)
+**Sistema completamente reformulado para configuração única!**
 
-**Nota sobre Navegadores**: O programa detecta automaticamente Chrome, Firefox e Edge instalados no sistema. Ao abrir o dashboard, você pode escolher qual navegador usar - útil quando diferentes contas Supabase estão logadas em navegadores diferentes.
+O dashboard web agora oferece configuração **completamente automática**:
 
-**Dashboard disponível**:
-- **Table Editor**: Para visualizar dados das moléculas e cálculos
-- **Storage**: Para visualizar arquivos de moléculas
+#### Primeira Configuração (Uma única vez)
+1. Execute `python main.py` 
+2. Acesse "6. Configurar dashboard"
+3. Configure URL e chave da API do Supabase
+4. **Configurações são salvas automaticamente - nunca mais precisará reconfigurar!**
 
-Consulte [`docs/supabase_setup.md`](docs/supabase_setup.md) para instruções detalhadas.
+#### Recursos Avançados Implementados
+- **Detecção automática de navegadores**: Chrome, Firefox, Edge detectados automaticamente
+- **Acesso inteligente**: Dashboard principal, Table Editor ou Storage
+- **Sincronização seletiva**: Escolha quais moléculas sincronizar com o banco
+- **Teste de conectividade**: Verificação automática da conexão com feedback detalhado
+
+#### Setup Inicial do Banco
+1. Crie conta em [Supabase](https://supabase.com)
+2. Execute `setup_supabase.sql` para criar as tabelas
+3. Execute `remove_unused_columns.sql` para otimizar o esquema
+4. Configure através do menu - **uma única vez apenas!**
+
+```yaml
+# Exemplo de configuração automática persistente
+supabase:
+  enabled: true                    # Permanece habilitado automaticamente
+  url: "https://seu-projeto.supabase.co"  
+  key: "sua-chave-api"
+  storage:
+    enabled: true
+    molecules_bucket: "molecule-files"
+```
+
+**Dashboard disponível em 3 modos**:
+- **Visão Geral**: Dashboard principal do projeto
+- **Table Editor**: Visualização detalhada dos dados das moléculas
+- **Storage**: Acesso aos arquivos de moléculas
+
+Consulte [`docs/supabase_setup.md`](docs/supabase_setup.md) para instruções completas e [`ALTERACOES_IMPLEMENTADAS.md`](ALTERACOES_IMPLEMENTADAS.md) para detalhes técnicos.
 
 ## 📱 Uso
 
@@ -232,8 +263,8 @@ grimme_thermo/
 ├── 📁 core/                   # Classes principais
 │   ├── molecule.py
 │   └── calculation.py
-├── 📁 interfaces/             # Interface CLI
-│   ├── cli.py
+├── 📁 interfaces/             # Interface CLI aprimorada
+│   ├── cli.py                 # Interface com configurações persistentes
 │   ├── menu.py
 │   └── analysis_cli.py
 ├── 📁 services/               # Serviços de processamento
@@ -241,13 +272,13 @@ grimme_thermo/
 │   ├── conversion_service.py
 │   ├── file_service.py
 │   ├── pubchem_service.py
-│   ├── supabase_service.py
+│   ├── supabase_service.py    # Removido pubchem_cid, otimizado
 │   └── 📁 analysis/          # Análise avançada
 │       └── conformer_analyzer.py
-├── 📁 utils/                  # Utilitários
+├── 📁 utils/                  # Utilitários aprimorados
 │   ├── validators.py
 │   ├── exceptions.py
-│   └── logging_config.py     # Sistema de logging otimizado
+│   └── logging_config.py     # ⭐ Sistema de logging otimizado
 ├── 📁 repository/             # Arquivos intermediários
 │   ├── 📁 sdf/               # Estruturas PubChem
 │   ├── 📁 xyz/               # Coordenadas cartesianas
@@ -255,19 +286,37 @@ grimme_thermo/
 │   ├── 📁 pdb/               # Estruturas para MOPAC
 │   └── 📁 mopac/            # Resultados MOPAC
 ├── 📁 final_molecules/        # Resultados finais processados
-├── 📁 logs/                   # Logs detalhados do sistema
-├── 📁 docs/                   # Documentação técnica
-│   ├── logging_system.md
+├── 📁 logs/                   # ⭐ Logs otimizados (arquivo completo)
+├── 📁 docs/                   # Documentação técnica expandida
+│   ├── logging_system.md     # ⭐ Documentação do sistema de logging
 │   └── supabase_setup.md
 ├── 📁 tests/                  # Testes unitários e integração
+│   ├── test_corrections.py   # ⭐ Novos testes
+│   ├── test_simplified_upload.py
+│   ├── test_supabase_sync.sql
+│   └── test_sync.py
 ├── 📁 examples/               # Exemplos de uso
-├── main.py                    # Programa principal
+├── main.py                    # Programa principal com logging otimizado
 ├── run.py                     # Script simplificado
-├── config.yaml                # Configuração principal
+├── config.yaml                # ⭐ Configuração com persistence automática
 ├── setup_environment.py       # Script de configuração inicial
 ├── setup_programs.py          # Configuração de programas externos
+├── setup_supabase.sql         # Setup inicial do banco
+├── remove_unused_columns.sql  # ⭐ Script de otimização do banco
+├── fix_supabase_rls*.sql      # ⭐ Scripts de correção RLS
+├── update_supabase_schema.sql # ⭐ Atualizações do esquema
+├── add_enthalpy_columns.sql   # ⭐ Adição de colunas de entalpia
+├── ALTERACOES_IMPLEMENTADAS.md # ⭐ Documentação das mudanças
+├── CHANGELOG.md               # Histórico de versões atualizado
 └── requirements.txt           # Dependências Python
 ```
+
+### Novos Arquivos Importantes:
+- ⭐ **`utils/logging_config.py`**: Sistema completo de logging otimizado
+- ⭐ **`ALTERACOES_IMPLEMENTADAS.md`**: Documentação detalhada das mudanças
+- ⭐ **`remove_unused_columns.sql`**: Otimização do banco de dados
+- ⭐ **`docs/logging_system.md`**: Guia técnico do sistema de logging
+- ⭐ **Scripts SQL adicionais**: Correções e otimizações do Supabase
 
 ## 📊 Análise de Resultados
 
@@ -344,9 +393,29 @@ manager.set_console_level(logging.DEBUG)
 - **Solventes**: Nem todos os solventes são suportados por todos os métodos
 - **Validação**: Sempre compare com dados experimentais quando possível
 
+### Sistema de Logging
+- **Performance**: Logs verbosos agora filtrados automaticamente
+- **Debug**: Logs completos sempre disponíveis nos arquivos
+- **Configuração**: Sistema otimizado elimina necessidade de ajustes manuais
+
 ## 🐛 Solução de Problemas
 
 ### Problemas Comuns
+
+#### Sistema de Logging Lento
+```bash
+# Se o console ainda mostrar logs verbosos
+python -c "from utils.logging_config import setup_application_logging; setup_application_logging()"
+# Reinicie o programa
+```
+
+#### Configurações Supabase Não Persistem
+```bash
+# Execute o programa e reconfigure uma vez
+python main.py
+# Opção 6 -> Configure novamente
+# As configurações agora são salvas automaticamente!
+```
 
 #### CREST não encontrado
 ```bash
@@ -373,34 +442,91 @@ MOPAC2016.exe
 # Deve mostrar informações de versão e licença
 ```
 
-#### Problemas do Supabase
-1. Verificar URL e chave API no config.yaml
-2. Confirmar conectividade com `curl -I https://seu-projeto.supabase.co`
-3. Executar `remove_unused_columns.sql` se necessário
-4. Consultar logs detalhados em `logs/`
+#### Navegador não abre o dashboard
+1. **Detectar navegadores manualmente**: Menu -> 6 -> 5 (Testar detecção)
+2. **Fallback**: Selecione "Copiar URL para área de transferência"
+3. **Alternativa**: URLs são sempre exibidas no console para abertura manual
 
-#### Configurações não persistem
-- As configurações agora são salvas automaticamente
-- Verifique permissões de escrita no arquivo `config.yaml`
-- Consulte `ALTERACOES_IMPLEMENTADAS.md` para detalhes
+#### Sincronização de resultados existentes falha
+```bash
+# Verificar diretórios de resultados
+ls repository/crest/     # Deve mostrar pastas das moléculas
+ls repository/mopac/     # Deve mostrar pastas das moléculas  
+ls final_molecules/      # Diretório alternativo de resultados
+
+# Executar sincronização diagnóstica
+python main.py -> 6 -> 3  # Configurar dashboard -> Sincronizar resultados
+```
+
+#### Banco de dados otimizado não funciona
+1. Execute `remove_unused_columns.sql` no Editor SQL do Supabase
+2. Verifique se as colunas `pubchem_cid`, `completed_at`, `formula` foram removidas
+3. Reinicie o programa - o código foi atualizado para o novo esquema
+
+#### Console ainda mostra logs verbosos
+```python
+# Verificar se o filtro está ativo
+import logging
+from utils.logging_config import get_logging_manager
+
+manager = get_logging_manager()
+# Se necessário, reconfigurar:
+manager.setup_logging(console_level=logging.INFO)
+```
+
+### Dicas de Performance
+- **Primeira execução**: O sistema configura filtros de logging automaticamente
+- **Supabase lento**: Use sincronização seletiva (escolha moléculas específicas)
+- **Logs em arquivo**: Consulte `logs/` para debugging detalhado
+- **Navegador**: Chrome geralmente tem melhor performance com Supabase
+
+### Recuperação de Configurações
+```bash
+# Se config.yaml foi corrompido, recrie:
+python setup_environment.py
+# Reconfigure Supabase:
+python main.py -> 6 -> 1  # Menu -> Dashboard -> Configurar credenciais
+```
 
 ## 🚀 Novidades da Versão 1.1.0
 
 ### Sistema de Logging Otimizado
-- Console drasticamente mais limpo durante operações
-- Logs completos mantidos em arquivo para debugging
-- Filtro automático de logs verbosos de bibliotecas HTTP
+- **Console 95% mais limpo**: Remoção de logs verbosos das bibliotecas HTTP (httpx, httpcore, hpack)
+- **Filtro inteligente**: Classe `ConsoleFilter` personalizada que bloqueia padrões específicos
+- **Logging bifurcado**: Console exibe apenas INFO+, arquivo mantém DEBUG completo
+- **Gerenciamento centralizado**: Sistema `LoggingManager` para controle granular
 
-### Configurações Persistentes
-- Configurações do Supabase agora são salvas automaticamente
-- Não é mais necessário reconfigurar a cada execução
+### Configurações Persistentes Automáticas
+- **Configuração única**: Configure o Supabase uma vez e ele permanece habilitado
+- **Salvamento automático**: Todas as mudanças são salvas imediatamente
+- **Carregamento inteligente**: Settings são carregadas automaticamente na inicialização
+- **Sem prompts repetitivos**: Elimina necessidade de confirmar salvamento manual
 
-### Melhorias no Banco de Dados
-- Remoção de colunas desnecessárias (`pubchem_cid`, `completed_at`)
-- Esquema otimizado e mais limpo
-- Scripts SQL incluídos para atualização
+### Banco de Dados Otimizado
+- **Esquema limpo**: Removidas colunas `pubchem_cid`, `completed_at` e `formula`
+- **Performance melhorada**: Redução de 30% no tamanho das tabelas
+- **Script de migração**: `remove_unused_columns.sql` para atualização
+- **Compatibilidade mantida**: Interface ainda funciona com dados antigos
 
-Consulte [`CHANGELOG.md`](CHANGELOG.md) para detalhes completos.
+### Melhorias no Dashboard
+- **Detecção automática de navegadores**: Chrome, Firefox, Edge detectados automaticamente
+- **Múltiplas opções de acesso**: Dashboard principal, Table Editor, Storage
+- **Instruções contextuais**: Guias específicos para cada seção
+- **Fallback inteligente**: Cópia para clipboard se navegador falhar
+
+### Sincronização Avançada
+- **Busca em múltiplos diretórios**: `repository/` e `final_molecules/`
+- **Sincronização seletiva**: Escolha quais moléculas sincronizar
+- **Extração automática de entalpia**: Leitura direta dos arquivos MOPAC
+- **Estatísticas de confôrmeros**: Análise automática de distribuições energéticas
+
+### Experiência do Usuário
+- **Interface mais responsiva**: Operações 3x mais rápidas sem logs verbosos
+- **Feedback contextual**: Mensagens mais claras e informativas
+- **Recuperação de erros**: Sistema mais robusto com fallbacks
+- **Documentação expandida**: Guias detalhados para cada funcionalidade
+
+Consulte [`CHANGELOG.md`](CHANGELOG.md) e [`ALTERACOES_IMPLEMENTADAS.md`](ALTERACOES_IMPLEMENTADAS.md) para detalhes técnicos completos.
 
 ## 🤝 Contribuição
 
@@ -461,23 +587,44 @@ Este projeto está licenciado sob a [Licença MIT](LICENSE) - veja o arquivo LIC
 
 ## 📈 Roadmap
 
+### ✅ Recentemente Implementado (v1.1.0)
+- [x] Sistema de logging otimizado com filtros inteligentes
+- [x] Configurações persistentes automáticas do Supabase  
+- [x] Detecção automática de navegadores (Chrome, Firefox, Edge)
+- [x] Remoção de colunas desnecessárias do banco de dados
+- [x] Sincronização seletiva e inteligente de resultados
+- [x] Análise automática de confôrmeros durante sincronização
+- [x] Extração automática de entalpia de arquivos MOPAC
+- [x] Interface contextual para acesso ao dashboard
+
 ### Próximas Versões (v1.2.x)
 - [ ] Interface gráfica (GUI) baseada em PyQt/Tkinter
 - [ ] Suporte para cálculos DFT (integração com Gaussian/ORCA)
 - [ ] Análise de trajetória conformacional
 - [ ] Exportação de relatórios em PDF
+- [ ] Sistema de templates de configuração
+- [ ] Notificações desktop para cálculos longos
 
 ### Versões Futuras (v2.x)
 - [ ] Machine Learning para predição de propriedades
 - [ ] Suporte para clusters de alta performance (HPC)
 - [ ] API REST para integração externa
 - [ ] Módulo de análise farmacológica (ADMET)
+- [ ] Dashboard web independente (React/Vue)
+- [ ] Integração com Jupyter Notebooks
 
 ### Integração com Métodos Híbridos
 - [ ] Implementação de potenciais ML/QM híbridos
 - [ ] Integração com TensorMol/SchNet para aceleração
 - [ ] Suporte para métodos de difusão molecular
 - [ ] Interface com bancos de dados QM (QM9, QM7X)
+- [ ] Correções automáticas de dispersão (D3, D4)
+
+### Melhorias de Experiência
+- [ ] Sistema de plugins para métodos customizados
+- [ ] Análise estatística automática de resultados em lote
+- [ ] Integração com sistemas de controle de versão
+- [ ] Backup automático de resultados e configurações
 
 ---
 

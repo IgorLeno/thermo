@@ -9,6 +9,12 @@ programs:
   crest_path: crest
   mopac_path: MOPAC2016.exe
   openbabel_path: obabel
+chemperium:
+  enabled: true
+  method: cbs-qb3                    # Método padrão (cbs-qb3 ou g3mp2b3)
+  dimension: 3d                      # Sempre 3D para usar geometrias
+  data_location: null                # null = usar modelos padrão do pacote
+
 supabase:
   enabled: true
   key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dnZ1Z3VrdGxrdHdqd2hvcHBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwMjgxOTMsImV4cCI6MjA2MjYwNDE5M30.XS6tT47gZtLpbUHHIoXcXinvoSywiHUeAxpSclEn4cA

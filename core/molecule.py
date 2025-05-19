@@ -9,12 +9,29 @@ class Molecule:
     """
     name: str
     pubchem_cid: Optional[int] = None
+    smiles: Optional[str] = None  # SMILES da molécula (para Chemperium)
     sdf_path: Optional[str] = None
     xyz_path: Optional[str] = None
     crest_conformers_path: Optional[str] = None
     crest_best_path: Optional[str] = None
     crest_output_dir: Optional[str] = None
     conformer_energies: List[float] = field(default_factory=list)
+    
+    # Campos para a etapa MOPAC
+    converted_pdb_path: Optional[Path] = None  # Ex: repository/pdb/ethanol.pdb
+    mopac_input_dat_path: Optional[Path] = None  # Ex: repository/mopac/ethanol/ethanol.dat
+    mopac_output_directory: Optional[Path] = None  # Ex: repository/mopac/ethanol/
+    mopac_output_log_path: Optional[Path] = None  # Ex: repository/mopac/ethanol/ethanol.out
+    enthalpy_formation_mopac: Optional[float] = None  # Entalpia em kcal/mol
+    enthalpy_formation_mopac_kj: Optional[float] = None  # Entalpia em kJ/mol
+    
+    # Campos para valores compatíveis (manter compatibilidade com código existente)
+    enthalpy_kj_mol: Optional[float] = None  # Alias para enthalpy_formation_mopac_kj
+    
+    # Campos para Chemperium
+    enthalpy_chemperium_kj_mol: Optional[float] = None  # Entalpia corrigida em kJ/mol
+    enthalpy_chemperium_uncertainty_kj_mol: Optional[float] = None  # Incerteza em kJ/mol
+    chemperium_reliability_score: Optional[float] = None  # Score de confiabilidade
     
     # Campos para a etapa MOPAC
     converted_pdb_path: Optional[Path] = None  # Ex: repository/pdb/ethanol.pdb
@@ -73,6 +90,22 @@ class Molecule:
         if enthalpy and isinstance(enthalpy, tuple) and len(enthalpy) == 2:
             self.enthalpy_formation_mopac = enthalpy[0]  # kcal/mol
             self.enthalpy_formation_mopac_kj = enthalpy[1]  # kJ/mol
+            # Manter compatibilidade com o código existente
+            self.enthalpy_kj_mol = enthalpy[1]  # kJ/mol
         else:
             self.enthalpy_formation_mopac = None
             self.enthalpy_formation_mopac_kj = None
+            self.enthalpy_kj_mol = None
+    
+    def set_chemperium_results(self, enthalpy_kj: float, uncertainty_kj: float, reliability: Optional[float] = None):
+        """
+        Define os resultados do cálculo Chemperium.
+        
+        Args:
+            enthalpy_kj: Entalpia corrigida em kJ/mol
+            uncertainty_kj: Incerteza da predição em kJ/mol
+            reliability: Score de confiabilidade (opcional)
+        """
+        self.enthalpy_chemperium_kj_mol = enthalpy_kj
+        self.enthalpy_chemperium_uncertainty_kj_mol = uncertainty_kj
+        self.chemperium_reliability_score = reliability
