@@ -3,7 +3,7 @@
                      SUMMARY OF  PM7 CALCULATION
 
                                                        MOPAC2016 (Version: 22.097 )
-                                                       Sat May 17 18:40:28 2025
+                                                       Mon May 19 15:22:11 2025
 
            Empirical Formula: C2 H6 O  =     9 atoms
 
@@ -16,11 +16,11 @@
      SCF FIELD WAS ACHIEVED                                   
 
           HEAT OF FORMATION       =        -57.85803 KCAL/MOL =    -242.07799 KJ/MOL
-          GRADIENT NORM           =          0.00681          =       0.00227 PER ATOM
-          DIPOLE                  =          2.05692 DEBYE   POINT GROUP:  C1  
+          GRADIENT NORM           =          0.00787          =       0.00262 PER ATOM
+          DIPOLE                  =          2.05696 DEBYE   POINT GROUP:  C1  
           NO. OF FILLED LEVELS    =         10
-          IONIZATION POTENTIAL    =         10.640511 EV
-          HOMO LUMO ENERGIES (EV) =        -10.641  2.965
+          IONIZATION POTENTIAL    =         10.640500 EV
+          HOMO LUMO ENERGIES (EV) =        -10.640  2.965
           MOLECULAR WEIGHT        =         46.0688
           COSMO AREA              =         86.92 SQUARE ANGSTROMS
           COSMO VOLUME            =         68.90 CUBIC ANGSTROMS
@@ -28,12 +28,12 @@
           MOLECULAR DIMENSIONS (Angstroms)
 
             Atom       Atom       Distance
-            H     9    H     7     3.61875
-            H     6    H     5     3.10420
-            H     4    H     8     2.82664
-          SCF CALCULATIONS        =         47
-          WALL-CLOCK TIME         =          0.211 SECONDS
-          COMPUTATION TIME        =          0.109 SECONDS
+            H     9    H     7     3.61868
+            H     6    H     5     3.10421
+            H     4    H     8     2.82660
+          SCF CALCULATIONS        =         51
+          WALL-CLOCK TIME         =          0.156 SECONDS
+          COMPUTATION TIME        =          0.203 SECONDS
 
 
           FINAL GEOMETRY OBTAINED
@@ -42,13 +42,13 @@
  START_RES=(1) PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000
 
  COMPND    -11.39433939
-  O(HETATM    1  O   UNL A   1)  -1.15647579 +1   0.23464866 +1  -0.06450865 +1
-  C(HETATM    2  C   UNL A   1)  -0.00676547 +1  -0.58084836 +1   0.04676094 +1
-  C(HETATM    3  C   UNL A   1)   1.26786554 +1   0.25270047 +1  -0.00962616 +1
-  H(HETATM    4  H   UNL A   1)  -0.08139296 +1  -1.16913007 +1   0.97876917 +1
-  H(HETATM    5  H   UNL A   1)  -0.10681527 +1  -1.25588111 +1  -0.82477528 +1
-  H(HETATM    6  H   UNL A   1)   1.37773421 +1   0.89133464 +1   0.87305457 +1
-  H(HETATM    7  H   UNL A   1)   2.15871357 +1  -0.38168693 +1  -0.07281029 +1
-  H(HETATM    8  H   UNL A   1)   1.26571223 +1   0.90807826 +1  -0.89096266 +1
-  H(HETATM    9  H   UNL A   1)  -1.13764852 +1   0.95469039 +1   0.59311794 +1
+  O(HETATM    1  O   UNL A   1)  -1.15643460 +1   0.23519348 +1  -0.06435773 +1
+  C(HETATM    2  C   UNL A   1)  -0.00688508 +1  -0.58057135 +1   0.04662414 +1
+  C(HETATM    3  C   UNL A   1)   1.26792565 +1   0.25271410 +1  -0.00964062 +1
+  H(HETATM    4  H   UNL A   1)  -0.08155484 +1  -1.16904584 +1   0.97850757 +1
+  H(HETATM    5  H   UNL A   1)  -0.10714494 +1  -1.25538459 +1  -0.82505729 +1
+  H(HETATM    6  H   UNL A   1)   1.37753364 +1   0.89168509 +1   0.87283289 +1
+  H(HETATM    7  H   UNL A   1)   2.15868879 +1  -0.38186201 +1  -0.07221438 +1
+  H(HETATM    8  H   UNL A   1)   1.26624413 +1   0.90776778 +1  -0.89121724 +1
+  H(HETATM    9  H   UNL A   1)  -1.13742217 +1   0.95505498 +1   0.59346274 +1
  

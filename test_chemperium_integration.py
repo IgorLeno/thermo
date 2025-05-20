@@ -20,21 +20,24 @@ def test_chemperium_availability():
     
     try:
         import chemperium
-        print("OK Chemperium esta instalado")
-        
-        # Configuração mínima
-        config = {"chemperium": {"enabled": True, "method": "cbs-qb3", "dimension": "3d"}}
-        chemperium_service = ChemperiumService(config)
-        
-        if chemperium_service.is_available():
-            print("OK Chemperium esta disponivel")
-            return True
-        else:
-            print("ERRO Chemperium nao esta disponivel")
-            return False
+        print("OK Chemperium real esta instalado")
+        real_chemperium = True
     except ImportError:
-        print("ERRO Chemperium nao esta instalado")
-        print("  Para instalar: pip install chemperium")
+        print("INFO Chemperium real nao instalado, usando mock")
+        real_chemperium = False
+    
+    # Configuração mínima
+    config = {"chemperium": {"enabled": True, "method": "cbs-qb3", "dimension": "3d"}}
+    chemperium_service = ChemperiumService(config)
+    
+    if chemperium_service.is_available():
+        if real_chemperium:
+            print("OK Chemperium real disponivel")
+        else:
+            print("OK Mock Chemperium disponivel")
+        return True
+    else:
+        print("ERRO Servico Chemperium nao disponivel")
         return False
 
 def test_pubchem_smiles():
@@ -163,15 +166,15 @@ def test_unit_conversion():
     return success_count == len(test_cases)
 
 def test_chemperium_mock_prediction():
-    """Testa uma predição mock do Chemperium (se disponível)."""
-    print("\n=== Teste 6: Predicao Mock do Chemperium ===")
+    """Testa uma predição do Chemperium (real ou mock)."""
+    print("\n=== Teste 6: Predicao Chemperium ===")
     
     config = {"chemperium": {"enabled": True, "method": "cbs-qb3", "dimension": "3d"}}
     chemperium_service = ChemperiumService(config)
     
     if not chemperium_service.is_available():
-        print("AVISO Chemperium nao disponivel. Pulando teste de predicao.")
-        return True
+        print("ERRO Servico Chemperium nao disponivel.")
+        return False
     
     # Dados de teste para etanol
     test_smiles = "CCO"

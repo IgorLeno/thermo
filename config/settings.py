@@ -38,12 +38,16 @@ class Settings:
         self.mopac_keywords: str = "PM7 EF PRECISE GNORM=0.01 NOINTER GRAPHF VECTORS MMOK CYCLES=20000"  # Default
         self.paths = Paths()
         self.supabase = SupabaseConfig()
+        self.config = {}
 
     def load_settings(self, filepath: str):
         """Carrega as configurações a partir de um arquivo YAML."""
         try:
             with open(filepath, "r") as f:
                 config = yaml.safe_load(f)
+
+            # Armazenar o dicionário completo para acesso direto
+            self.config = config
 
             self.calculation_params = CalculationParameters(**config.get("calculation_parameters", {}))
             
@@ -98,6 +102,21 @@ class Settings:
                 }
             }
         }
+        
+        # Incluir configurações do Chemperium se existirem
+        if 'chemperium' in self.config:
+            config['chemperium'] = self.config['chemperium']
+        elif hasattr(self, 'chemperium_config'):
+            config['chemperium'] = self.chemperium_config
+        else:
+            # Configurações padrão do Chemperium se não existirem
+            config['chemperium'] = {
+                'enabled': True,
+                'method': 'cbs-qb3',
+                'dimension': '3d',
+                'data_location': None
+            }
+        
         try:
             with open(filepath, "w") as f:
                 yaml.dump(config, f, default_flow_style=False)

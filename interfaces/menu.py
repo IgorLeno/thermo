@@ -2,7 +2,7 @@ from services.calculation_service import CalculationService
 from services.file_service import FileService
 from services.pubchem_service import PubChemService
 from services.conversion_service import ConversionService
-from services.chemperium import ChemperiumService
+from services.chemperium.chemperium_service import ChemperiumService
 from config.settings import Settings
 from core.molecule import Molecule
 import os
@@ -162,8 +162,6 @@ class Menu:
         Processa uma molécula usando CREST + MOPAC + Chemperium.
         """
         try:
-            from services.chemperium.chemperium_service import kcal_to_kj
-            
             # Parte 1: Fluxo tradicional (CREST + MOPAC)
             print(f"[{molecule.name}] Iniciando fluxo tradicional...")
             

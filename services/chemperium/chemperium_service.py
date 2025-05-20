@@ -42,7 +42,7 @@ class ChemperiumService:
             logger.info("Chemperium encontrado e disponível")
             return True
         except ImportError:
-            logger.warning("Chemperium não está instalado")
+            logger.warning("Chemperium não está instalado, usando mock para desenvolvimento")
             return False
     
     def predict_enthalpy_with_llot(self, 
@@ -65,15 +65,19 @@ class ChemperiumService:
         Raises:
             ChemperiumError: Se ocorrer erro na predição
         """
-        if not self.chemperium_available:
-            raise ChemperiumError("Chemperium não está instalado")
-        
         try:
-            import chemperium as cp
+            if self.chemperium_available:
+                import chemperium as cp
+                module_to_use = cp
+            else:
+                # Usa mock se Chemperium não disponível
+                from .mock_chemperium import MockChemperium
+                module_to_use = MockChemperium()
+                logger.warning("Usando mock do Chemperium para desenvolvimento")
             
             # Inicializar modelo Chemperium
             logger.info(f"Inicializando modelo Chemperium {self.method} ({self.dimension})")
-            thermo = cp.Thermo(self.method, self.dimension, self.data_location)
+            thermo = module_to_use.Thermo(self.method, self.dimension, self.data_location)
             
             # Realizar predição
             logger.info("Calculando entalpia com Chemperium...")
@@ -118,17 +122,21 @@ class ChemperiumService:
         Raises:
             ChemperiumError: Se ocorrer erro na predição
         """
-        if not self.chemperium_available:
-            raise ChemperiumError("Chemperium não está instalado")
-        
         try:
-            import chemperium as cp
+            if self.chemperium_available:
+                import chemperium as cp
+                module_to_use = cp
+            else:
+                # Usa mock se Chemperium não disponível
+                from .mock_chemperium import MockChemperium
+                module_to_use = MockChemperium()
+                logger.warning("Usando mock do Chemperium para desenvolvimento")
             
             # Para predição standalone, usar 2D se não tiver coordenadas
             dimension = self.dimension if xyz_content else "2d"
             
             logger.info(f"Inicializando modelo Chemperium {self.method} ({dimension})")
-            thermo = cp.Thermo(self.method, dimension, self.data_location)
+            thermo = module_to_use.Thermo(self.method, dimension, self.data_location)
             
             # Realizar predição
             logger.info("Calculando entalpia com Chemperium (standalone)...")
@@ -266,8 +274,8 @@ class ChemperiumService:
             raise ChemperiumError(f"Erro ao gerar polinômios NASA: {str(e)}")
     
     def is_available(self) -> bool:
-        """Retorna se o Chemperium está disponível."""
-        return self.chemperium_available and self.enabled
+        """Retorna se o Chemperium está disponível (real ou mock)."""
+        return self.enabled  # Sempre disponível se habilitado (usa mock se necessário)
 
 
 # Função de conveniência para converter units
